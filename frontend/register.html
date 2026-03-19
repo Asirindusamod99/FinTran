@@ -232,26 +232,26 @@
 
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">First Name</label>
+          <label for="firstName" class="form-label">First Name</label>
           <div class="input-with-icon">
             <i class="fa-solid fa-user input-icon"></i>
-            <input type="text" id="firstName" class="form-control" placeholder="Amara" required>
+            <input type="text" id="firstName" name="firstName" class="form-control" placeholder="Amara" required autocomplete="given-name">
           </div>
         </div>
         <div class="form-group">
-          <label class="form-label">Last Name</label>
+          <label for="lastName" class="form-label">Last Name</label>
           <div class="input-with-icon">
             <i class="fa-solid fa-user input-icon"></i>
-            <input type="text" id="lastName" class="form-control" placeholder="Perera">
+            <input type="text" id="lastName" name="lastName" class="form-control" placeholder="Perera" autocomplete="family-name">
           </div>
         </div>
       </div>
 
       <div class="form-group">
-        <label class="form-label">Email Address</label>
+        <label for="email" class="form-label">Email Address</label>
         <div class="input-with-icon">
           <i class="fa-solid fa-envelope input-icon"></i>
-          <input type="email" id="email" class="form-control" placeholder="you@example.com" required>
+          <input type="email" id="email" name="email" class="form-control" placeholder="you@example.com" required autocomplete="email">
         </div>
       </div>
 
@@ -294,10 +294,10 @@
       </div>
 
       <div class="form-group">
-        <label class="form-label">Password</label>
+        <label for="password" class="form-label">Password</label>
         <div class="input-with-icon" style="position:relative;">
           <i class="fa-solid fa-lock input-icon"></i>
-          <input type="password" id="password" class="form-control" placeholder="min. 6 characters" required minlength="6" oninput="checkPasswordStrength(this.value)">
+          <input type="password" id="password" name="password" class="form-control" placeholder="min. 6 characters" required minlength="6" oninput="checkPasswordStrength(this.value)" autocomplete="new-password">
           <button type="button" class="btn-icon" onclick="togglePwd('password')"
             style="position:absolute;right:6px;top:50%;transform:translateY(-50%);width:30px;height:30px;border-radius:6px;">
             <i class="fa-regular fa-eye"></i>
@@ -310,10 +310,10 @@
       </div>
 
       <div class="form-group">
-        <label class="form-label">Confirm Password</label>
+        <label for="confirmPassword" class="form-label">Confirm Password</label>
         <div class="input-with-icon" style="position:relative;">
           <i class="fa-solid fa-lock input-icon"></i>
-          <input type="password" id="confirmPassword" class="form-control" placeholder="••••••••" required>
+          <input type="password" id="confirmPassword" name="confirmPassword" class="form-control" placeholder="••••••••" required autocomplete="new-password">
           <button type="button" class="btn-icon" onclick="togglePwd('confirmPassword')"
             style="position:absolute;right:6px;top:50%;transform:translateY(-50%);width:30px;height:30px;border-radius:6px;">
             <i class="fa-regular fa-eye"></i>
