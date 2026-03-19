@@ -36,7 +36,7 @@ const FinTran = {
   },
 
   // ─── API HELPER ──────────────
-  apiUrl: 'http://localhost:3000/api',
+  apiUrl: '/api',
 
   async apiCall(endpoint, method = 'GET', body = null) {
     const user = this.getUser();
