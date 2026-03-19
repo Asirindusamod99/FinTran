@@ -36,7 +36,9 @@ const FinTran = {
   },
 
   // ─── API HELPER ──────────────
-  apiUrl: (window.location.hostname === '127.0.0.1' || window.location.port === '5500') ? 'http://localhost:3000/api' : '/api',
+  apiUrl: (window.location.hostname === '127.0.0.1' || window.location.port === '5500') 
+    ? 'http://localhost:3000/api' 
+    : 'https://asirindusamod.online/api',
 
   async apiCall(endpoint, method = 'GET', body = null) {
     const user = this.getUser();

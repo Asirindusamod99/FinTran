@@ -12,7 +12,10 @@ const db = require('./database');
 const { verifyToken } = require('./middleware/auth');
 
 const app = express();
-app.use(cors());
+app.use(cors({
+    origin: 'https://asirindusamod.online', // ඔයාගේ Frontend URL එක (Gemini කිව්ව විදිහටම)
+    credentials: true
+}));
 app.use(express.json());
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fintran_super_secret_key_12345';
