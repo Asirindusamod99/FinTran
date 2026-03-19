@@ -5,8 +5,8 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 
-// මෙතන තමයි වෙනස: SESClient එක SES විදිහට පාවිච්චි කරන්න Alias එකක් දාන්න ඕනේ
-const { SESClient: SES } = require('@aws-sdk/client-sesv2');
+// SESv2 Client එක සහ SendEmailCommand එක අරගමු
+const { SESv2Client, SendEmailCommand } = require('@aws-sdk/client-sesv2');
 
 const db = require('./database');
 const { verifyToken } = require('./middleware/auth');
@@ -17,8 +17,8 @@ app.use(express.json());
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fintran_super_secret_key_12345';
 
-// SES Client එක සැකසීම - දැන් මේ SES කියන එක Constructor එකක් විදිහට වැඩ කරනවා
-const ses = new SES({
+// SES Client එක සැකසීම (Nodemailer 8 සඳහා නිවැරදි ක්‍රමය)
+const sesClient = new SESv2Client({
   region: process.env.AWS_REGION || 'us-east-1',
   credentials: {
     accessKeyId: process.env.AWS_ACCESS_KEY || '',
@@ -28,7 +28,7 @@ const ses = new SES({
 
 // Nodemailer Transport එක SESv3 සමඟ සම්බන්ධ කිරීම
 const transporter = nodemailer.createTransport({
-  SES: { ses, aws: { SES } }
+  SES: { sesClient, SendEmailCommand }
 });
 
 // ─── AUTHENTICATION APIS ────────────────────────────────────────
