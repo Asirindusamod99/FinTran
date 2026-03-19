@@ -1,0 +1,70 @@
+name: FinTran Secure CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # STEP 1: Configure AWS (Using the OLD keys for EC2 access)
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Get GitHub Action IP
+        id: ip
+        run: echo "ipv4=$(curl -s https://ifconfig.me)" >> $GITHUB_OUTPUT
+
+      - name: Add GitHub IP to Security Group (Open Port 22)
+        run: |
+          aws ec2 authorize-security-group-ingress \
+            --group-id ${{ secrets.EC2_SG_ID }} \
+            --protocol tcp \
+            --port 22 \
+            --cidr ${{ steps.ip.outputs.ipv4 }}/32
+
+      # STEP 2: Deployment via SSH (Mapping SES Secrets here)
+      - name: Deploy to EC2 via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          # මෙතන තමයි අලුත් SES Keys ටික Docker එකට පාස් කරන්නේ
+          envs: SES_AWS_ACCESS_KEY,SES_AWS_SECRET_KEY,EMAIL_FROM,AWS_REGION
+          script: |
+            cd ~/FinTran
+            # Create or Update .env file on the server dynamically
+            echo "AWS_ACCESS_KEY=$SES_AWS_ACCESS_KEY" > .env
+            echo "AWS_SECRET_KEY=$SES_AWS_SECRET_KEY" >> .env
+            echo "EMAIL_FROM=$EMAIL_FROM" >> .env
+            echo "AWS_REGION=$AWS_REGION" >> .env
+            
+            sudo git reset --hard
+            sudo git pull origin main
+            sudo docker compose down
+            sudo docker compose --env-file .env up --build -d
+            sudo docker image prune -f
+        env:
+          SES_AWS_ACCESS_KEY: ${{ secrets.SES_AWS_ACCESS_KEY }}
+          SES_AWS_SECRET_KEY: ${{ secrets.SES_AWS_SECRET_KEY }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+
+      # STEP 3: Close Port 22 (Cleanup)
+      - name: Remove GitHub IP from Security Group
+        if: always() 
+        run: |
+          aws ec2 revoke-security-group-ingress \
+            --group-id ${{ secrets.EC2_SG_ID }} \
+            --protocol tcp \
+            --port 22 \
+            --cidr ${{ steps.ip.outputs.ipv4 }}/32

@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reports – FinTran</title>
+  <meta name="description" content="Financial reports, trends and analysis in FinTran.">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%236366f1%22/><text y=%22.9em%22 font-size=%2272%22 x=%2250%25%22 dominant-baseline=%22auto%22 text-anchor=%22middle%22>%F0%9F%92%B0</text></svg>">
+  <script>(function(){const t=localStorage.getItem('ft_theme');if(t)document.documentElement.setAttribute('data-theme',t);})();</script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    .report-tabs {
+      display: flex;
+      gap: 4px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 4px;
+    }
+    .report-tab {
+      padding: 8px 18px;
+      border-radius: 8px;
+      border: none;
+      background: none;
+      font-family: var(--font);
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--text-3);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .report-tab.active {
+      background: linear-gradient(135deg, var(--accent), #8b5cf6);
+      color: white;
+    }
+    .report-section { display: none; }
+    .report-section.active { display: block; }
+    .insight-card {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 16px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      margin-bottom: 10px;
+    }
+    .insight-icon { font-size: 22px; flex-shrink: 0; }
+    .dropdown-item {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 10px 16px;
+      background: transparent;
+      border: none;
+      font-family: var(--font);
+      font-size: 13.5px;
+      color: var(--text-2);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .dropdown-item:hover {
+      background: var(--surface-2);
+      color: var(--text-1);
+    }
+  </style>
+</head>
+</head>
+<body>
+<!-- Download Report Modal -->
+<div class="modal-overlay" id="downloadModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Download Report</div>
+        <div class="modal-subtitle">Generate custom financial reports</div>
+      </div>
+      <button class="modal-close" onclick="document.getElementById('downloadModal').classList.remove('open')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label class="form-label">Report Period</label>
+        <select class="form-control" id="reportPeriod" onchange="toggleCustomDates()">
+          <option value="1">Last 1 Month</option>
+          <option value="3">Last 3 Months</option>
+          <option value="6">Last 6 Months</option>
+          <option value="12">Last 12 Months</option>
+          <option value="custom">Custom Date Range</option>
+        </select>
+      </div>
+      
+      <div class="form-row" id="customDateWrap" style="display: none; margin-bottom: 16px;">
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label">Start Date</label>
+          <input type="date" class="form-control" id="reportStartDate">
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label">End Date</label>
+          <input type="date" class="form-control" id="reportEndDate">
+        </div>
+      </div>
+      
+      <div class="form-group" style="margin-bottom: 0;">
+        <label class="form-label">Format</label>
+        <div style="display: flex; gap: 10px; margin-top: 6px;">
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+            <input type="radio" name="reportFormat" value="pdf" checked> <span>PDF (Styled)</span>
+          </label>
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin-left: 10px;">
+            <input type="radio" name="reportFormat" value="csv"> <span>CSV (Excel)</span>
+          </label>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="document.getElementById('downloadModal').classList.remove('open')">Cancel</button>
+      <button class="btn btn-primary" onclick="generateCustomReport()">
+        <i class="fa-solid fa-download"></i> Generate & Download
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="app-shell">
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon"><i class="fa-solid fa-wallet"></i></div>
+      <span class="logo-text">Fin<span>Tran</span></span>
+    </div>
+    <div class="sidebar-user" onclick="location.href='profile.html'" style="cursor:pointer;" title="View Profile">
+      <div class="user-avatar" id="userAvatar">A</div>
+      <div class="user-info">
+        <div class="user-name" id="userName">Loading...</div>
+        <div class="user-role">Personal Finance</div>
+      </div>
+    </div>
+    <div class="nav-section-label">Main</div>
+    <ul class="nav-links">
+      <li><a href="index.html"><div class="nav-icon"><i class="fa-solid fa-grid-2"></i></div>Dashboard</a></li>
+      <li><a href="income.html"><div class="nav-icon"><i class="fa-solid fa-arrow-trend-up"></i></div>Income</a></li>
+      <li><a href="expenses.html"><div class="nav-icon"><i class="fa-solid fa-arrow-trend-down"></i></div>Expenses</a></li>
+      <li><a href="budgets.html"><div class="nav-icon"><i class="fa-solid fa-sliders"></i></div>Budgets</a></li>
+      <li class="active"><a href="reports.html"><div class="nav-icon"><i class="fa-solid fa-chart-pie"></i></div>Reports</a></li>
+      <li><a href="savings.html"><div class="nav-icon"><i class="fa-solid fa-piggy-bank"></i></div>Savings</a></li>
+      <li><a href="wallet.html"><div class="nav-icon"><i class="fa-solid fa-wallet"></i></div>Wallet</a></li>
+    </ul>
+    <div class="nav-section-label" style="margin-top:8px;">Account</div>
+    <ul class="nav-links">
+      <li><a href="profile.html"><div class="nav-icon"><i class="fa-solid fa-user"></i></div>Profile</a></li>
+      <li><a href="settings.html"><div class="nav-icon"><i class="fa-solid fa-gear"></i></div>Settings</a></li>
+      <li><a href="#" onclick="FinTran.logout()"><div class="nav-icon"><i class="fa-solid fa-arrow-right-from-bracket"></i></div>Logout</a></li>
+    </ul>
+    <div class="sidebar-footer">
+      <button class="btn-icon" onclick="FinTran.toggleTheme();location.reload();" title="Toggle theme"><i class="fa-solid fa-sun"></i></button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main-content">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="btn-icon" id="menuToggle"><i class="fa-solid fa-bars"></i></button>
+        <div>
+          <div class="page-title">Reports & Analytics</div>
+          <div class="page-subtitle">Financial insights and trends</div>
+        </div>
+      </div>
+      <div class="topbar-right" style="display: flex; gap: 12px; align-items: center;">
+        <div class="report-tabs">
+          <button class="report-tab active" onclick="switchTab('overview',this)">Overview</button>
+          <button class="report-tab" onclick="switchTab('income',this)">Income</button>
+          <button class="report-tab" onclick="switchTab('expense',this)">Expense</button>
+          <button class="report-tab" onclick="switchTab('insights',this)">Insights</button>
+        </div>
+        <button class="btn btn-primary" onclick="document.getElementById('downloadModal').classList.add('open')" style="border-radius: var(--radius-sm); font-size: 13.5px; padding: 8px 16px;">
+          <i class="fa-solid fa-download"></i> Download
+        </button>
+      </div>
+    </header>
+
+    <div class="page-content">
+
+      <!-- ─── OVERVIEW TAB ─── -->
+      <div class="report-section active" id="tab-overview">
+
+        <!-- 6 month stats -->
+        <div class="stats-grid mb-24" id="overviewStats"></div>
+
+        <!-- Main chart -->
+        <div class="card mb-24">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Income vs Expenses – Last 6 Months</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="chart-wrap" style="min-height:280px;"><canvas id="overviewBarChart"></canvas></div>
+          </div>
+        </div>
+
+        <!-- Net Worth trend + Monthly table -->
+        <div class="charts-grid mb-24">
+          <div class="card">
+            <div class="card-header"><div class="card-title">Net Savings Trend</div></div>
+            <div class="card-body">
+              <div class="chart-wrap"><canvas id="netChart"></canvas></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Monthly Summary</div></div>
+            <div class="card-body" style="padding:0;">
+              <table class="data-table" id="monthlyTable">
+                <thead>
+                  <tr><th>Month</th><th class="text-right">Income</th><th class="text-right">Expenses</th><th class="text-right">Balance</th></tr>
+                </thead>
+                <tbody id="monthlyBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── INCOME TAB ─── -->
+      <div class="report-section" id="tab-income">
+        <div class="charts-grid mb-24">
+          <div class="card">
+            <div class="card-header"><div class="card-title">Income Trend</div></div>
+            <div class="card-body"><div class="chart-wrap"><canvas id="incomeTrendChart"></canvas></div></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Income by Source</div></div>
+            <div class="card-body">
+              <div class="chart-wrap" style="min-height:200px;"><canvas id="incomeCatChart"></canvas></div>
+              <div id="incomeCatLegend" style="margin-top:14px;"></div>
+            </div>
+          </div>
+        </div>
+        <div class="card mb-24">
+          <div class="card-header"><div class="card-title">Monthly Income Details</div></div>
+          <div class="card-body" style="padding:0;">
+            <table class="data-table"><thead><tr><th>Month</th><th class="text-right">Total Income</th><th class="text-right">vs Prev Month</th><th class="text-right">Entries</th></tr></thead>
+            <tbody id="incomeMonthBody"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── EXPENSE TAB ─── -->
+      <div class="report-section" id="tab-expense">
+        <div class="charts-grid mb-24">
+          <div class="card">
+            <div class="card-header"><div class="card-title">Spending Trend</div></div>
+            <div class="card-body"><div class="chart-wrap"><canvas id="expTrendChart"></canvas></div></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Top Spending Categories</div></div>
+            <div class="card-body">
+              <div class="chart-wrap" style="min-height:200px;"><canvas id="expCatChart"></canvas></div>
+            </div>
+          </div>
+        </div>
+        <div class="card mb-24">
+          <div class="card-header"><div class="card-title">Category Breakdown (All Time)</div></div>
+          <div class="card-body" style="padding:0;">
+            <table class="data-table"><thead><tr><th>Category</th><th class="text-right">Total Spent</th><th class="text-right">Transactions</th><th class="text-right">% of Total</th></tr></thead>
+            <tbody id="expCatBody"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── INSIGHTS TAB ─── -->
+      <div class="report-section" id="tab-insights">
+        <div class="stats-grid mb-24" id="insightStats"></div>
+        <div class="charts-grid mb-24">
+          <div class="card">
+            <div class="card-header"><div class="card-title">💡 Financial Insights</div></div>
+            <div class="card-body" id="insightsList"></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Savings Rate Progress</div></div>
+            <div class="card-body">
+              <div class="chart-wrap"><canvas id="savingsChart"></canvas></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+  const user = FinTran.requireAuth();
+  let chartsInited = {};
+
+  if (user) {
+    document.getElementById('userAvatar').textContent = user.avatar || user.name?.charAt(0) || 'U';
+    initOverview();
+  }
+
+  function switchTab(tab, btn) {
+    document.querySelectorAll('.report-tab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.report-section').forEach(s => s.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + tab).classList.add('active');
+
+    if (!chartsInited[tab]) {
+      chartsInited[tab] = true;
+      if (tab === 'overview') initOverview();
+      if (tab === 'income')   initIncomeTab();
+      if (tab === 'expense')  initExpenseTab();
+      if (tab === 'insights') initInsights();
+    }
+  }
+
+  function getChartDefaults() {
+    const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+    return {
+      textColor: isDark ? '#94a3b8' : '#475569',
+      gridColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
+    };
+  }
+
+  // ─── OVERVIEW ────────────────────────────────────────────────────
+  function initOverview() {
+    const data6m = FinTran.getLast6MonthsData();
+    const { textColor, gridColor } = getChartDefaults();
+    Chart.defaults.color = textColor;
+    Chart.defaults.font.family = 'Inter';
+
+    const totalIncome   = data6m.reduce((s, d) => s + d.income, 0);
+    const totalExpenses = data6m.reduce((s, d) => s + d.expenses, 0);
+    const totalBalance  = totalIncome - totalExpenses;
+    const avgSavings    = data6m.reduce((s, d) => s + (d.income > 0 ? (d.income - d.expenses) / d.income * 100 : 0), 0) / 6;
+
+    document.getElementById('overviewStats').innerHTML = `
+      <div class="stat-card green">
+        <div class="stat-icon green"><i class="fa-solid fa-arrow-trend-up"></i></div>
+        <div class="stat-label">6-Month Income</div>
+        <div class="stat-value">${FinTran.formatCurrency(totalIncome)}</div>
+        <div class="stat-change pos">Total earned</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-icon red"><i class="fa-solid fa-arrow-trend-down"></i></div>
+        <div class="stat-label">6-Month Expenses</div>
+        <div class="stat-value">${FinTran.formatCurrency(totalExpenses)}</div>
+        <div class="stat-change">Total spent</div>
+      </div>
+      <div class="stat-card accent">
+        <div class="stat-icon accent"><i class="fa-solid fa-wallet"></i></div>
+        <div class="stat-label">Net Saved</div>
+        <div class="stat-value ${totalBalance >= 0 ? 'text-green' : 'text-red'}">${FinTran.formatCurrency(Math.abs(totalBalance))}</div>
+        <div class="stat-change ${totalBalance >= 0 ? 'pos' : 'neg'}">${totalBalance >= 0 ? 'Total surplus' : 'Total deficit'}</div>
+      </div>
+      <div class="stat-card amber">
+        <div class="stat-icon amber"><i class="fa-solid fa-piggy-bank"></i></div>
+        <div class="stat-label">Avg Savings Rate</div>
+        <div class="stat-value">${avgSavings.toFixed(0)}%</div>
+        <div class="stat-change ${avgSavings >= 20 ? 'pos' : 'neg'}">${avgSavings >= 20 ? 'Excellent!' : 'Needs improvement'}</div>
+      </div>
+    `;
+
+    // Bar chart
+    new Chart(document.getElementById('overviewBarChart').getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: data6m.map(d => d.label),
+        datasets: [
+          { label: 'Income',   data: data6m.map(d => d.income),   backgroundColor: 'rgba(34,197,94,0.7)',  borderColor: '#22c55e', borderWidth: 1, borderRadius: 6 },
+          { label: 'Expenses', data: data6m.map(d => d.expenses), backgroundColor: 'rgba(239,68,68,0.7)', borderColor: '#ef4444', borderWidth: 1, borderRadius: 6 },
+        ],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'top', labels: { padding: 20, boxWidth: 14 } } },
+        scales: {
+          x: { grid: { display: false } },
+          y: { grid: { color: gridColor }, ticks: { callback: v => 'Rs.' + (v/1000).toFixed(0) + 'K' } },
+        },
+      },
+    });
+
+    // Net savings line
+    new Chart(document.getElementById('netChart').getContext('2d'), {
+      type: 'line',
+      data: {
+        labels: data6m.map(d => d.label),
+        datasets: [{
+          label: 'Net Savings',
+          data: data6m.map(d => d.balance),
+          borderColor: d => d.raw >= 0 ? '#22c55e' : '#ef4444',
+          borderColor: '#6366f1',
+          backgroundColor: 'rgba(99,102,241,0.1)',
+          fill: true, tension: 0.4,
+          pointBackgroundColor: data6m.map(d => d.balance >= 0 ? '#22c55e' : '#ef4444'),
+          pointRadius: 5,
+        }],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false } },
+          y: { grid: { color: gridColor }, ticks: { callback: v => 'Rs.' + (v/1000).toFixed(0) + 'K' } },
+        },
+      },
+    });
+
+    // Monthly table
+    document.getElementById('monthlyBody').innerHTML = data6m.reverse().map(d => `
+      <tr>
+        <td style="font-weight:600;">${d.label}</td>
+        <td class="text-right text-green">+${FinTran.formatCurrency(d.income)}</td>
+        <td class="text-right text-red">-${FinTran.formatCurrency(d.expenses)}</td>
+        <td class="text-right ${d.balance >= 0 ? 'text-green' : 'text-red'} font-bold">
+          ${d.balance >= 0 ? '+' : '-'}${FinTran.formatCurrency(Math.abs(d.balance))}
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  // ─── INCOME TAB ─────────────────────────────────────────────────
+  function initIncomeTab() {
+    const data6m = FinTran.getLast6MonthsData();
+    const { textColor, gridColor } = getChartDefaults();
+    Chart.defaults.color = textColor;
+
+    new Chart(document.getElementById('incomeTrendChart').getContext('2d'), {
+      type: 'line',
+      data: {
+        labels: data6m.map(d => d.label),
+        datasets: [{
+          label: 'Income', data: data6m.map(d => d.income),
+          borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.1)',
+          fill: true, tension: 0.4, pointBackgroundColor: '#22c55e', pointRadius: 5,
+        }],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { x: { grid: { display: false } }, y: { grid: { color: gridColor }, ticks: { callback: v => 'Rs.' + (v/1000).toFixed(0) + 'K' } } },
+      },
+    });
+
+    const cats = FinTran.getCategoryBreakdown('income');
+    new Chart(document.getElementById('incomeCatChart').getContext('2d'), {
+      type: 'doughnut',
+      data: {
+        labels: cats.map(c => c.category.name),
+        datasets: [{ data: cats.map(c => c.total), backgroundColor: cats.map(c => c.category.color + 'bb'), borderColor: cats.map(c => c.category.color), borderWidth: 2, hoverOffset: 6 }],
+      },
+      options: { responsive: true, maintainAspectRatio: false, cutout: '62%', plugins: { legend: { display: false } } },
+    });
+
+    document.getElementById('incomeCatLegend').innerHTML = cats.map(c => `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="width:10px;height:10px;background:${c.category.color};border-radius:3px;display:inline-block;"></span>
+          <span style="font-size:12px;color:var(--text-2);">${c.category.name}</span>
+        </div>
+        <span style="font-size:12px;font-weight:700;color:var(--green);">${FinTran.formatCurrency(c.total)}</span>
+      </div>
+    `).join('');
+
+    document.getElementById('incomeMonthBody').innerHTML = data6m.reverse().map((d, i, arr) => {
+      const prev = arr[i+1];
+      const diff = prev ? ((d.income - prev.income) / (prev.income || 1) * 100).toFixed(0) : 0;
+      const txns = FinTran.getTransactions().filter(t => {
+        const dt = new Date(t.date);
+        return t.type === 'income' && dt.toLocaleDateString('en',{month:'short'}) === d.label;
+      }).length;
+      return `<tr>
+        <td style="font-weight:600;">${d.label}</td>
+        <td class="text-right text-green font-bold">+${FinTran.formatCurrency(d.income)}</td>
+        <td class="text-right ${Number(diff) >= 0 ? 'text-green' : 'text-red'}">${diff > 0 ? '↑' : '↓'} ${Math.abs(diff)}%</td>
+        <td class="text-right text-muted">${txns}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  // ─── EXPENSE TAB ────────────────────────────────────────────────
+  function initExpenseTab() {
+    const data6m = FinTran.getLast6MonthsData();
+    const { textColor, gridColor } = getChartDefaults();
+    Chart.defaults.color = textColor;
+
+    new Chart(document.getElementById('expTrendChart').getContext('2d'), {
+      type: 'line',
+      data: {
+        labels: data6m.map(d => d.label),
+        datasets: [{
+          label: 'Expenses', data: data6m.map(d => d.expenses),
+          borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)',
+          fill: true, tension: 0.4, pointBackgroundColor: '#ef4444', pointRadius: 5,
+        }],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { x: { grid: { display: false } }, y: { grid: { color: gridColor }, ticks: { callback: v => 'Rs.' + (v/1000).toFixed(0) + 'K' } } },
+      },
+    });
+
+    const cats = FinTran.getCategoryBreakdown('expense');
+    new Chart(document.getElementById('expCatChart').getContext('2d'), {
+      type: 'polarArea',
+      data: {
+        labels: cats.slice(0,6).map(c => c.category.name),
+        datasets: [{ data: cats.slice(0,6).map(c => c.total), backgroundColor: cats.slice(0,6).map(c => c.category.color + '99'), borderColor: cats.slice(0,6).map(c => c.category.color), borderWidth: 2 }],
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { padding: 10, boxWidth: 12 } } } },
+    });
+
+    const total = cats.reduce((s, c) => s + c.total, 0);
+    const txns  = FinTran.getTransactions().filter(t => t.type === 'expense');
+    document.getElementById('expCatBody').innerHTML = cats.map(c => {
+      const count = txns.filter(t => t.categoryId === c.category.id).length;
+      return `<tr>
+        <td>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div class="cat-icon" style="background:${c.category.color}20;color:${c.category.color};"><i class="fa-solid ${c.category.icon}"></i></div>
+            <span style="font-weight:600;">${c.category.name}</span>
+          </div>
+        </td>
+        <td class="text-right text-red font-bold">-${FinTran.formatCurrency(c.total)}</td>
+        <td class="text-right text-muted">${count}</td>
+        <td class="text-right"><span class="badge badge-neutral">${(c.total/total*100).toFixed(1)}%</span></td>
+      </tr>`;
+    }).join('');
+  }
+
+  // ─── INSIGHTS ────────────────────────────────────────────────────
+  function initInsights() {
+    const data6m = FinTran.getLast6MonthsData();
+    const { textColor, gridColor } = getChartDefaults();
+    Chart.defaults.color = textColor;
+
+    const totalInc = data6m.reduce((s, d) => s + d.income, 0);
+    const totalExp = data6m.reduce((s, d) => s + d.expenses, 0);
+    const savingsRates = data6m.map(d => d.income > 0 ? ((d.income - d.expenses) / d.income * 100) : 0);
+    const avgRate = savingsRates.reduce((s, r) => s + r, 0) / 6;
+
+    document.getElementById('insightStats').innerHTML = `
+      <div class="stat-card green">
+        <div class="stat-icon green"><i class="fa-solid fa-piggy-bank"></i></div>
+        <div class="stat-label">Avg Savings Rate</div>
+        <div class="stat-value">${avgRate.toFixed(0)}%</div>
+        <div class="stat-change ${avgRate >= 20 ? 'pos' : 'neg'}">Target: 20%+</div>
+      </div>
+      <div class="stat-card amber">
+        <div class="stat-icon amber"><i class="fa-solid fa-calendar-check"></i></div>
+        <div class="stat-label">Best Saving Month</div>
+        <div class="stat-value">${data6m[savingsRates.indexOf(Math.max(...savingsRates))]?.label || 'N/A'}</div>
+        <div class="stat-change pos">${Math.max(...savingsRates).toFixed(0)}% saved</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-icon red"><i class="fa-solid fa-calendar-xmark"></i></div>
+        <div class="stat-label">Highest Spending Month</div>
+        <div class="stat-value">${data6m.reduce((p, c) => c.expenses > p.expenses ? c : p, data6m[0])?.label || 'N/A'}</div>
+        <div class="stat-change neg">Most expenses</div>
+      </div>
+      <div class="stat-card accent">
+        <div class="stat-icon accent"><i class="fa-solid fa-scale-unbalanced"></i></div>
+        <div class="stat-label">Expense Ratio</div>
+        <div class="stat-value">${totalInc > 0 ? (totalExp/totalInc*100).toFixed(0) : 0}%</div>
+        <div class="stat-change ${totalInc > 0 && totalExp/totalInc < 0.8 ? 'pos' : 'neg'}">of income spent</div>
+      </div>
+    `;
+
+    // Savings rate chart
+    new Chart(document.getElementById('savingsChart').getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: data6m.map(d => d.label),
+        datasets: [{
+          label: 'Savings Rate %',
+          data: savingsRates.map(r => Math.max(0, r)),
+          backgroundColor: savingsRates.map(r => r >= 20 ? 'rgba(34,197,94,0.7)' : r >= 10 ? 'rgba(245,158,11,0.7)' : 'rgba(239,68,68,0.7)'),
+          borderColor:     savingsRates.map(r => r >= 20 ? '#22c55e' : r >= 10 ? '#f59e0b' : '#ef4444'),
+          borderWidth: 1, borderRadius: 6,
+        }],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          annotation: { annotations: [{ type: 'line', yMin: 20, yMax: 20, borderColor: '#22c55e', borderDash: [6,3], label: { content: '20% target', enabled: true } }] },
+        },
+        scales: {
+          x: { grid: { display: false } },
+          y: { grid: { color: gridColor }, ticks: { callback: v => v + '%' }, max: 60 },
+        },
+      },
+    });
+
+    // Smart insights
+    const insights = [];
+    if (avgRate >= 20) insights.push({ icon: '🏆', text: `Excellent! Your average savings rate of <strong>${avgRate.toFixed(0)}%</strong> exceeds the recommended 20%.` });
+    else insights.push({ icon: '📈', text: `Try to increase your savings rate. Current average: <strong>${avgRate.toFixed(0)}%</strong>. Target: 20%+.` });
+
+    const topCat = FinTran.getCategoryBreakdown('expense')[0];
+    if (topCat) insights.push({ icon: '💸', text: `Your biggest spending category is <strong>${topCat.category.name}</strong> at ${FinTran.formatCurrency(topCat.total)} — consider reducing it.` });
+
+    const lastM = data6m[data6m.length - 1];
+    if (lastM.income > 0 && lastM.expenses > lastM.income * 0.9) {
+      insights.push({ icon: '⚠️', text: `Last month you spent <strong>${(lastM.expenses/lastM.income*100).toFixed(0)}%</strong> of your income. Try to bring this below 80%.` });
+    }
+
+    insights.push({ icon: '💡', text: `You've recorded <strong>${FinTran.getTransactions().length}</strong> transactions in FinTran. Keep tracking consistently!` });
+
+    document.getElementById('insightsList').innerHTML = insights.map(i => `
+      <div class="insight-card">
+        <span class="insight-icon">${i.icon}</span>
+        <p style="font-size:13px;color:var(--text-2);line-height:1.6;">${i.text}</p>
+      </div>
+    `).join('');
+  }
+
+  function toggleCustomDates() {
+    const custom = document.getElementById('reportPeriod').value === 'custom';
+    document.getElementById('customDateWrap').style.display = custom ? 'grid' : 'none';
+  }
+
+  function generateCustomReport() {
+    const period = document.getElementById('reportPeriod').value;
+    const format = document.querySelector('input[name="reportFormat"]:checked').value;
+    
+    let startDate = new Date();
+    let endDate = new Date();
+    let titleStr = '';
+    
+    if (period === 'custom') {
+      const sStr = document.getElementById('reportStartDate').value;
+      const eStr = document.getElementById('reportEndDate').value;
+      if (!sStr || !eStr) return FinTran.toast('Please select start and end dates', 'error');
+      startDate = new Date(sStr);
+      endDate = new Date(eStr);
+      titleStr = `From ${FinTran.formatDate(sStr)} to ${FinTran.formatDate(eStr)}`;
+    } else {
+      startDate.setMonth(endDate.getMonth() - parseInt(period));
+      titleStr = `Last ${period} Month(s)`;
+    }
+    
+    startDate.setHours(0,0,0,0);
+    endDate.setHours(23,59,59,999);
+    
+    const txns = FinTran.getTransactions().filter(t => {
+      const d = new Date(t.date);
+      return d >= startDate && d <= endDate;
+    });
+    
+    if (txns.length === 0) {
+      return FinTran.toast('No transactions found in this period.', 'warning');
+    }
+    
+    if (format === 'csv') {
+      return generateCSV(txns, titleStr);
+    } else {
+      return generatePDF(txns, titleStr);
+    }
+  }
+
+  function generateCSV(txns, titleStr) {
+    let totalIncome = 0;
+    let totalExpense = 0;
+    
+    let csvContent = `FinTran Budget Report\nPeriod: ${titleStr}\n`;
+    csvContent += `Generated on: ${new Date().toLocaleDateString()}\n\n`;
+    csvContent += "Date,Type,Category,Description,Amount (Rs.)\n";
+    
+    txns.forEach(t => {
+      const cat = FinTran.getCategoryById(t.categoryId);
+      const catName = cat ? cat.name : t.categoryId;
+      const desc = (t.description || '').replace(/,/g, ' '); 
+      const amt = Number(t.amount);
+      
+      if (t.type === 'income') totalIncome += amt;
+      else if (t.type === 'expense') totalExpense += amt;
+      
+      csvContent += `${t.date},${t.type},${catName},${desc},${amt}\n`;
+    });
+    
+    csvContent += `\nSummary\n`;
+    csvContent += `Total Income,${totalIncome}\n`;
+    csvContent += `Total Expense,${totalExpense}\n`;
+    csvContent += `Net Balance,${totalIncome - totalExpense}\n`;
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `FinTran_Report_${new Date().getTime()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    FinTran.toast(`CSV Report downloaded successfully.`, 'success');
+    document.getElementById('downloadModal').classList.remove('open');
+  }
+
+  function generatePDF(txns, titleStr) {
+    let totalIncome = 0;
+    let totalExpense = 0;
+    
+    txns.forEach(t => {
+      if (t.type === 'income') totalIncome += Number(t.amount);
+      else if (t.type === 'expense') totalExpense += Number(t.amount);
+    });
+    
+    const user = FinTran.getUser();
+    const userName = user ? user.name : 'User';
+    
+    const htmlRows = txns.map(t => {
+      const cat = FinTran.getCategoryById(t.categoryId);
+      const catName = cat ? cat.name : t.categoryId;
+      const color = t.type === 'income' ? '#16a34a' : '#dc2626';
+      const amountStr = (t.type === 'income' ? '+' : '-') + FinTran.formatCurrencyFull(t.amount);
+      return `
+        <tr style="border-bottom: 1px solid #e2e8f0;">
+          <td style="padding: 12px 8px; font-size: 13px; color: #475569;">${FinTran.formatDate(t.date)}</td>
+          <td style="padding: 12px 8px; border-radius: 6px;">
+            <span style="display:inline-block; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; color: #fff; background: ${cat ? cat.color : '#94a3b8'};">
+              ${catName}
+            </span>
+          </td>
+          <td style="padding: 12px 8px; font-size: 13px; font-weight: 600; color: #0f172a;">${t.description}</td>
+          <td style="padding: 12px 8px; font-size: 13px; font-weight: 700; color: ${color}; text-align: right;">${amountStr}</td>
+        </tr>
+      `;
+    }).join('');
+    
+    const netBalance = totalIncome - totalExpense;
+    const netColor = netBalance >= 0 ? '#16a34a' : '#dc2626';
+    
+    const element = document.createElement('div');
+    element.style.padding = '40px';
+    element.style.fontFamily = "'Inter', sans-serif";
+    element.style.color = '#0f172a';
+    element.style.background = '#ffffff';
+    element.style.width = '800px';
+    
+    element.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #6366f1; padding-bottom: 20px; margin-bottom: 30px;">
+        <div>
+          <h1 style="margin: 0; font-size: 28px; color: #6366f1; font-weight: 800;">FinTran</h1>
+          <p style="margin: 5px 0 0; font-size: 14px; color: #64748b;">Personal Financial Report</p>
+        </div>
+        <div style="text-align: right;">
+          <p style="margin: 0; font-size: 14px; font-weight: 600;">Account: ${userName}</p>
+          <p style="margin: 5px 0 0; font-size: 12px; color: #64748b;">Generated on: ${new Date().toLocaleDateString()}</p>
+        </div>
+      </div>
+      
+      <div style="background: #f8fafc; border-radius: 12px; padding: 20px; margin-bottom: 30px;">
+        <h2 style="margin: 0 0 15px; font-size: 16px; font-weight: 700; color: #0f172a;">Summary (${titleStr})</h2>
+        <div style="display: flex; justify-content: space-between;">
+          <div>
+            <p style="margin: 0; font-size: 12px; color: #64748b; text-transform: uppercase;">Total Income</p>
+            <p style="margin: 5px 0 0; font-size: 20px; font-weight: 700; color: #16a34a;">${FinTran.formatCurrencyFull(totalIncome)}</p>
+          </div>
+          <div>
+            <p style="margin: 0; font-size: 12px; color: #64748b; text-transform: uppercase;">Total Expenses</p>
+            <p style="margin: 5px 0 0; font-size: 20px; font-weight: 700; color: #dc2626;">${FinTran.formatCurrencyFull(totalExpense)}</p>
+          </div>
+          <div>
+            <p style="margin: 0; font-size: 12px; color: #64748b; text-transform: uppercase;">Net Balance</p>
+            <p style="margin: 5px 0 0; font-size: 20px; font-weight: 700; color: ${netColor};">${FinTran.formatCurrencyFull(Math.abs(netBalance))} ${netBalance >= 0 ? '(Surplus)' : '(Deficit)'}</p>
+          </div>
+        </div>
+      </div>
+      
+      <h3 style="margin: 0 0 15px; font-size: 16px; font-weight: 700; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">Transaction Details</h3>
+      <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+          <tr style="background: #f1f5f9; text-align: left;">
+            <th style="padding: 10px 8px; font-size: 12px; font-weight: 600; color: #475569; width: 15%;">Date</th>
+            <th style="padding: 10px 8px; font-size: 12px; font-weight: 600; color: #475569; width: 25%;">Category</th>
+            <th style="padding: 10px 8px; font-size: 12px; font-weight: 600; color: #475569; width: 40%;">Description</th>
+            <th style="padding: 10px 8px; font-size: 12px; font-weight: 600; color: #475569; width: 20%; text-align: right;">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${htmlRows}
+        </tbody>
+      </table>
+    `;
+
+    document.getElementById('downloadModal').classList.remove('open');
+    FinTran.toast('Generating beautiful PDF, please wait...', 'info');
+    
+    html2pdf().from(element).set({
+      margin: 15,
+      filename: `FinTran_Report_${new Date().getTime()}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    }).save().then(() => {
+      setTimeout(() => FinTran.toast('PDF Downloaded successfully!', 'success'), 500);
+    });
+  }
+</script>
+</body>
+</html>

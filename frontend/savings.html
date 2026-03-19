@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Savings – FinTran</title>
+  <meta name="description" content="Track your savings goals, deposits and progress in FinTran.">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%236366f1%22/><text y=%22.9em%22 font-size=%2272%22 x=%2250%25%22 dominant-baseline=%22auto%22 text-anchor=%22middle%22>%F0%9F%92%B0</text></svg>">
+  <script>(function(){const t=localStorage.getItem('ft_theme');if(t)document.documentElement.setAttribute('data-theme',t);})();</script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .savings-hero {
+      background: linear-gradient(135deg, #042f2e 0%, #0c4a6e 50%, #1e1b4b 100%);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 32px 36px;
+      margin-bottom: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+    .savings-hero::before {
+      content: '';
+      position: absolute;
+      top: -80px; right: -60px;
+      width: 300px; height: 300px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(34,197,94,0.2) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .savings-hero::after {
+      content: '';
+      position: absolute;
+      bottom: -80px; left: 30%;
+      width: 250px; height: 250px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(6,182,212,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .goal-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      position: relative;
+      overflow: hidden;
+    }
+    .goal-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-md);
+      border-color: var(--border-2);
+    }
+    .goal-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+    }
+    .goal-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 20px;
+    }
+    .goal-emoji {
+      width: 52px; height: 52px;
+      border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px;
+      flex-shrink: 0;
+    }
+    .deposit-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .deposit-item:last-child { border-bottom: none; }
+    .milestone {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      padding: 4px 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .milestone.reached { background: var(--green-bg); color: var(--green); border-color: rgba(34,197,94,0.3); }
+    @keyframes shimmer {
+      0% { background-position: -200px 0; }
+      100% { background-position: 200px 0; }
+    }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon"><i class="fa-solid fa-wallet"></i></div>
+      <span class="logo-text">Fin<span>Tran</span></span>
+    </div>
+    <div class="sidebar-user" onclick="location.href='profile.html'" style="cursor:pointer;" title="View Profile">
+      <div class="user-avatar" id="userAvatar">A</div>
+      <div class="user-info">
+        <div class="user-name" id="userName">Loading...</div>
+        <div class="user-role">Personal Finance</div>
+      </div>
+    </div>
+    <div class="nav-section-label">Main</div>
+    <ul class="nav-links">
+      <li><a href="index.html"><div class="nav-icon"><i class="fa-solid fa-grid-2"></i></div>Dashboard</a></li>
+      <li><a href="income.html"><div class="nav-icon"><i class="fa-solid fa-arrow-trend-up"></i></div>Income</a></li>
+      <li><a href="expenses.html"><div class="nav-icon"><i class="fa-solid fa-arrow-trend-down"></i></div>Expenses</a></li>
+      <li><a href="budgets.html"><div class="nav-icon"><i class="fa-solid fa-sliders"></i></div>Budgets</a></li>
+      <li><a href="reports.html"><div class="nav-icon"><i class="fa-solid fa-chart-pie"></i></div>Reports</a></li>
+      <li class="active"><a href="savings.html"><div class="nav-icon"><i class="fa-solid fa-piggy-bank"></i></div>Savings</a></li>
+      <li><a href="wallet.html"><div class="nav-icon"><i class="fa-solid fa-wallet"></i></div>Wallet</a></li>
+    </ul>
+    <div class="nav-section-label" style="margin-top:8px;">Account</div>
+    <ul class="nav-links">
+      <li><a href="profile.html"><div class="nav-icon"><i class="fa-solid fa-user"></i></div>Profile</a></li>
+      <li><a href="settings.html"><div class="nav-icon"><i class="fa-solid fa-gear"></i></div>Settings</a></li>
+      <li><a href="#" onclick="FinTran.logout()"><div class="nav-icon"><i class="fa-solid fa-arrow-right-from-bracket"></i></div>Logout</a></li>
+    </ul>
+    <div class="sidebar-footer">
+      <button class="btn-icon" onclick="FinTran.toggleTheme();location.reload();" title="Toggle theme"><i class="fa-solid fa-sun"></i></button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main-content">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="btn-icon" id="menuToggle"><i class="fa-solid fa-bars"></i></button>
+        <div>
+          <div class="page-title">Savings Goals</div>
+          <div class="page-subtitle">Track your financial dreams</div>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <button class="btn btn-primary" onclick="openAddGoal()">
+          <i class="fa-solid fa-plus"></i> New Goal
+        </button>
+      </div>
+    </header>
+
+    <div class="page-content">
+
+      <!-- Hero Section -->
+      <div class="savings-hero" id="savingsHero">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:24px;position:relative;z-index:2;">
+          <div>
+            <div style="font-size:14px;color:rgba(255,255,255,0.5);font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Total Savings Progress</div>
+            <div style="font-size:36px;font-weight:800;color:#fff;" id="heroTotal">Rs. 0</div>
+            <div style="font-size:14px;color:rgba(255,255,255,0.6);margin-top:4px;" id="heroSubtext">across 0 goals</div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+            <div style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);border-radius:var(--radius-sm);padding:16px 24px;text-align:center;">
+              <div style="font-size:24px;font-weight:800;color:#22c55e;" id="heroCompleted">0</div>
+              <div style="font-size:11px;color:rgba(255,255,255,0.5);">Completed</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);border-radius:var(--radius-sm);padding:16px 24px;text-align:center;">
+              <div style="font-size:24px;font-weight:800;color:#06b6d4;" id="heroActive">0</div>
+              <div style="font-size:11px;color:rgba(255,255,255,0.5);">In Progress</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-grid mb-24" id="savingsStats"></div>
+
+      <!-- Chart + Tips -->
+      <div class="charts-grid mb-24">
+        <div class="card">
+          <div class="card-header"><div class="card-title">Savings Distribution</div></div>
+          <div class="card-body">
+            <div class="chart-wrap" style="min-height:240px;"><canvas id="savingsChart"></canvas></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">💡 Saving Tips</div></div>
+          <div class="card-body" id="savingsTips" style="display:flex;flex-direction:column;gap:10px;"></div>
+        </div>
+      </div>
+
+      <!-- Goal Cards -->
+      <div class="section-header">
+        <div class="section-title">Your Goals</div>
+        <div class="text-sm text-muted" id="goalCount"></div>
+      </div>
+      <div class="goal-grid mb-24" id="goalCards"></div>
+
+      <!-- Empty state -->
+      <div id="emptyGoals" style="display:none;">
+        <div class="card">
+          <div class="empty-state">
+            <div class="empty-icon"><i class="fa-solid fa-piggy-bank"></i></div>
+            <h3>No savings goals yet</h3>
+            <p>Start saving for your dreams! Create your first savings goal to begin tracking your progress.</p>
+            <button class="btn btn-primary" style="margin-top:12px;" onclick="openAddGoal()">
+              <i class="fa-solid fa-plus"></i> Create First Goal
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Goal Modal -->
+<div class="modal-overlay" id="goalModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="goalModalTitle">New Savings Goal</div>
+        <div class="modal-subtitle">Set a target and start saving</div>
+      </div>
+      <button class="modal-close" onclick="closeGoalModal()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Goal Name</label>
+        <div class="input-with-icon">
+          <i class="fa-solid fa-bullseye input-icon"></i>
+          <input type="text" id="goalName" class="form-control" placeholder="e.g. New Laptop, Emergency Fund">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Icon / Emoji</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;" id="emojiPicker">
+          <span class="emoji-opt" onclick="selectEmoji(this)" data-emoji="🎯" style="cursor:pointer;font-size:22px;padding:6px;border-radius:8px;border:2px solid transparent;">🎯</span>
+          <span class="emoji-opt" onclick="selectEmoji(this)" data-emoji="💻" style="cursor:pointer;font-size:22px;padding:6px;border-radius:8px;border:2px solid transparent;">💻</span>
+          <span class="emoji-opt" onclick="selectEmoji(this)" data-emoji="🏠" style="cursor:pointer;font-size:22px;padding:6px;border-radius:8px;border:2px solid transparent;">🏠</span>
+          <span class="emoji-opt" onclick="selectEmoji(this)" data-emoji="🚗" style="cursor:pointer;font-size:22px;padding:6px;border-radius:8px;border:2px solid transparent;">🚗</span>
+          <span class="emoji-opt" onclick="selectEmoji(this)" data-emoji="✈️" style="cursor:pointer;font-size:22px;padding:6px;border-radius:8px;border:2px solid transparent;">✈️</span>
+          <span class="emoji-opt" onclick="selectEmoji(this)" data-emoji="🎓" style="cursor:pointer;font-size:22px;padding:6px;border-radius:8px;border:2px solid transparent;">🎓</span>
+          <span class="emoji-opt" onclick="selectEmoji(this)" data-emoji="💍" style="cursor:pointer;font-size:22px;padding:6px;border-radius:8px;border:2px solid transparent;">💍</span>
+          <span class="emoji-opt" onclick="selectEmoji(this)" data-emoji="📱" style="cursor:pointer;font-size:22px;padding:6px;border-radius:8px;border:2px solid transparent;">📱</span>
+          <span class="emoji-opt" onclick="selectEmoji(this)" data-emoji="🏥" style="cursor:pointer;font-size:22px;padding:6px;border-radius:8px;border:2px solid transparent;">🏥</span>
+          <span class="emoji-opt" onclick="selectEmoji(this)" data-emoji="🛡️" style="cursor:pointer;font-size:22px;padding:6px;border-radius:8px;border:2px solid transparent;">🛡️</span>
+          <span class="emoji-opt" onclick="selectEmoji(this)" data-emoji="🎁" style="cursor:pointer;font-size:22px;padding:6px;border-radius:8px;border:2px solid transparent;">🎁</span>
+          <span class="emoji-opt" onclick="selectEmoji(this)" data-emoji="💰" style="cursor:pointer;font-size:22px;padding:6px;border-radius:8px;border:2px solid transparent;">💰</span>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Target Amount (Rs.)</label>
+          <div class="input-with-prefix">
+            <span class="input-prefix">Rs.</span>
+            <input type="number" id="goalTarget" class="form-control" placeholder="e.g. 250000" min="1">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Color</label>
+          <select id="goalColor" class="form-control">
+            <option value="#22c55e">🟢 Green</option>
+            <option value="#06b6d4">🔵 Cyan</option>
+            <option value="#6366f1">🟣 Purple</option>
+            <option value="#f59e0b">🟡 Amber</option>
+            <option value="#ef4444">🔴 Red</option>
+            <option value="#ec4899">💖 Pink</option>
+            <option value="#8b5cf6">💜 Violet</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Target Date (Optional)</label>
+        <div class="input-with-icon">
+          <i class="fa-regular fa-calendar input-icon"></i>
+          <input type="date" id="goalDate" class="form-control">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeGoalModal()">Cancel</button>
+      <button class="btn btn-success" onclick="saveGoal()">
+        <i class="fa-solid fa-piggy-bank"></i> Save Goal
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Deposit Modal -->
+<div class="modal-overlay" id="depositModal">
+  <div class="modal" style="max-width:440px;">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Add Deposit</div>
+        <div class="modal-subtitle" id="depositSubtitle">Save money towards your goal</div>
+      </div>
+      <button class="modal-close" onclick="closeDepositModal()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Amount (Rs.)</label>
+        <div class="input-with-prefix">
+          <span class="input-prefix">Rs.</span>
+          <input type="number" id="depositAmount" class="form-control" placeholder="e.g. 5000" min="1">
+        </div>
+        <div class="form-hint" id="depositHint"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Note (Optional)</label>
+        <div class="input-with-icon">
+          <i class="fa-solid fa-pencil input-icon"></i>
+          <input type="text" id="depositNote" class="form-control" placeholder="e.g. Monthly saving">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeDepositModal()">Cancel</button>
+      <button class="btn btn-success" onclick="confirmDeposit()">
+        <i class="fa-solid fa-coins"></i> Add Deposit
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirm -->
+<div class="modal-overlay" id="delGoalModal">
+  <div class="modal" style="max-width:360px;">
+    <div class="modal-body" style="text-align:center;padding:36px 24px;">
+      <div style="width:64px;height:64px;background:var(--red-bg);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:26px;color:var(--red);"><i class="fa-solid fa-trash"></i></div>
+      <div style="font-size:15px;font-weight:700;color:var(--text-1);margin-bottom:8px;">Delete this savings goal?</div>
+      <p style="font-size:13px;color:var(--text-3);">All deposit history for this goal will be lost.</p>
+      <div style="display:flex;gap:10px;justify-content:center;margin-top:20px;">
+        <button class="btn btn-ghost" onclick="document.getElementById('delGoalModal').classList.remove('open')">Cancel</button>
+        <button class="btn btn-danger" onclick="confirmDeleteGoal()">Delete</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Goal Details Modal -->
+<div class="modal-overlay" id="detailsModal">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="detailsTitle">Goal Details</div>
+        <div class="modal-subtitle" id="detailsSubtitle"></div>
+      </div>
+      <button class="modal-close" onclick="document.getElementById('detailsModal').classList.remove('open')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body" id="detailsBody"></div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+  const user = FinTran.requireAuth();
+  let selectedEmoji = '🎯';
+  let editGoalId = null;
+  let depositGoalId = null;
+  let deleteGoalId = null;
+
+  if (user) {
+    document.getElementById('userAvatar').textContent = user.avatar || user.name?.charAt(0) || 'U';
+    renderAll();
+  }
+
+  function renderAll() {
+    const goals = FinTran.getSavingsGoals();
+    renderHero(goals);
+    renderStats(goals);
+    renderCards(goals);
+    renderChart(goals);
+    renderTips(goals);
+  }
+
+  // ─── Hero ──────────────────────────────────────────────────────────
+  function renderHero(goals) {
+    const totalSaved = goals.reduce((s, g) => s + (g.saved || 0), 0);
+    const completed  = goals.filter(g => (g.saved || 0) >= g.target).length;
+    const active     = goals.length - completed;
+
+    document.getElementById('heroTotal').textContent = FinTran.formatCurrencyFull(totalSaved);
+    document.getElementById('heroSubtext').textContent = `across ${goals.length} goal${goals.length !== 1 ? 's' : ''}`;
+    document.getElementById('heroCompleted').textContent = completed;
+    document.getElementById('heroActive').textContent = active;
+  }
+
+  // ─── Stats ─────────────────────────────────────────────────────────
+  function renderStats(goals) {
+    const totalTarget = goals.reduce((s, g) => s + g.target, 0);
+    const totalSaved  = goals.reduce((s, g) => s + (g.saved || 0), 0);
+    const overallPct  = totalTarget > 0 ? (totalSaved / totalTarget * 100).toFixed(0) : 0;
+    const remaining   = Math.max(0, totalTarget - totalSaved);
+
+    // Monthly savings from transactions
+    const now = new Date();
+    const stat = FinTran.getMonthStats(now.getFullYear(), now.getMonth());
+    const monthlySavings = Math.max(0, stat.income - stat.expenses);
+
+    document.getElementById('savingsStats').innerHTML = `
+      <div class="stat-card green">
+        <div class="stat-icon green"><i class="fa-solid fa-piggy-bank"></i></div>
+        <div class="stat-label">Total Saved</div>
+        <div class="stat-value">${FinTran.formatCurrency(totalSaved)}</div>
+        <div class="stat-change pos">${overallPct}% of target</div>
+      </div>
+      <div class="stat-card accent">
+        <div class="stat-icon accent"><i class="fa-solid fa-bullseye"></i></div>
+        <div class="stat-label">Total Target</div>
+        <div class="stat-value">${FinTran.formatCurrency(totalTarget)}</div>
+        <div class="stat-change">${goals.length} goals</div>
+      </div>
+      <div class="stat-card amber">
+        <div class="stat-icon amber"><i class="fa-solid fa-hourglass-half"></i></div>
+        <div class="stat-label">Remaining</div>
+        <div class="stat-value">${FinTran.formatCurrency(remaining)}</div>
+        <div class="stat-change">to reach all goals</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-icon green"><i class="fa-solid fa-chart-line"></i></div>
+        <div class="stat-label">Monthly Savings</div>
+        <div class="stat-value">${FinTran.formatCurrency(monthlySavings)}</div>
+        <div class="stat-change pos">This month</div>
+      </div>
+    `;
+  }
+
+  // ─── Goal Cards ────────────────────────────────────────────────────
+  function renderCards(goals) {
+    if (goals.length === 0) {
+      document.getElementById('goalCards').innerHTML = '';
+      document.getElementById('emptyGoals').style.display = 'block';
+      document.getElementById('goalCount').textContent = '';
+      return;
+    }
+
+    document.getElementById('emptyGoals').style.display = 'none';
+    document.getElementById('goalCount').textContent = goals.length + ' savings goal' + (goals.length !== 1 ? 's' : '');
+
+    document.getElementById('goalCards').innerHTML = goals.map(g => {
+      const pct = g.target > 0 ? Math.min((g.saved || 0) / g.target * 100, 100) : 0;
+      const isComplete = pct >= 100;
+      const color = g.color || '#22c55e';
+      const remaining = Math.max(0, g.target - (g.saved || 0));
+      const daysLeft = g.targetDate ? Math.max(0, Math.ceil((new Date(g.targetDate) - new Date()) / 86400000)) : null;
+
+      // Milestones
+      const milestones = [25, 50, 75, 100];
+      const milestonesHtml = milestones.map(m =>
+        `<span class="milestone ${pct >= m ? 'reached' : ''}">
+          ${pct >= m ? '<i class="fa-solid fa-check" style="font-size:9px;"></i>' : '<i class="fa-solid fa-lock" style="font-size:8px;color:var(--text-3);"></i>'}
+          ${m}%
+        </span>`
+      ).join('');
+
+      return `
+        <div class="goal-card" style="--goal-color:${color};">
+          <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${color};"></div>
+          ${isComplete ? '<div style="position:absolute;top:12px;right:12px;"><span class="badge badge-income"><i class="fa-solid fa-trophy"></i> Completed!</span></div>' : ''}
+          <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
+            <div class="goal-emoji" style="background:${color}18;">${g.emoji || '🎯'}</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:16px;font-weight:700;color:var(--text-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${g.name}</div>
+              <div style="font-size:11px;color:var(--text-3);margin-top:2px;">
+                ${daysLeft !== null ? (daysLeft > 0 ? daysLeft + ' days left' : 'Deadline passed') : 'No deadline'}
+                ${g.targetDate ? ' • ' + FinTran.formatDate(g.targetDate) : ''}
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
+            <div>
+              <span style="font-size:20px;font-weight:800;color:${color};">${FinTran.formatCurrency(g.saved || 0)}</span>
+              <span style="font-size:12px;color:var(--text-3);"> / ${FinTran.formatCurrency(g.target)}</span>
+            </div>
+            <span style="font-size:16px;font-weight:800;color:${pct >= 100 ? '#22c55e' : pct >= 75 ? '#f59e0b' : 'var(--text-2)'};">${pct.toFixed(0)}%</span>
+          </div>
+
+          <div class="progress-bar" style="height:10px;border-radius:5px;margin-bottom:12px;">
+            <div class="progress-fill" style="width:${pct}%;background:${color};border-radius:5px;"></div>
+          </div>
+
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;">
+            ${milestonesHtml}
+          </div>
+
+          ${!isComplete ? `<div style="font-size:12px;color:var(--text-3);margin-bottom:14px;">
+            Remaining: <strong style="color:var(--text-2);">${FinTran.formatCurrency(remaining)}</strong>
+          </div>` : ''}
+
+          <div style="display:flex;gap:8px;">
+            ${!isComplete ? `<button class="btn btn-success btn-sm" onclick="openDeposit('${g.id}')"><i class="fa-solid fa-plus"></i> Add Deposit</button>` : ''}
+            <button class="btn btn-ghost btn-sm" onclick="viewDetails('${g.id}')"><i class="fa-solid fa-eye"></i> Details</button>
+            <button class="btn btn-ghost btn-sm" onclick="openEditGoal('${g.id}')"><i class="fa-solid fa-pen"></i></button>
+            <button class="btn btn-ghost btn-sm" style="color:var(--red);border-color:rgba(239,68,68,0.3);" onclick="showDeleteGoal('${g.id}')"><i class="fa-solid fa-trash"></i></button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // ─── Chart ─────────────────────────────────────────────────────────
+  function renderChart(goals) {
+    const existing = Chart.getChart('savingsChart');
+    if (existing) existing.destroy();
+    if (goals.length === 0) return;
+
+    const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+    Chart.defaults.color = isDark ? '#94a3b8' : '#475569';
+    Chart.defaults.font.family = 'Inter';
+
+    new Chart(document.getElementById('savingsChart').getContext('2d'), {
+      type: 'doughnut',
+      data: {
+        labels: goals.map(g => g.name),
+        datasets: [{
+          data: goals.map(g => g.saved || 0),
+          backgroundColor: goals.map(g => (g.color || '#22c55e') + 'bb'),
+          borderColor: goals.map(g => g.color || '#22c55e'),
+          borderWidth: 2,
+          hoverOffset: 8,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '60%',
+        plugins: {
+          legend: { position: 'bottom', labels: { padding: 14, boxWidth: 12 } },
+        },
+      },
+    });
+  }
+
+  // ─── Tips ──────────────────────────────────────────────────────────
+  function renderTips(goals) {
+    const tips = [];
+    const totalSaved = goals.reduce((s, g) => s + (g.saved || 0), 0);
+
+    if (goals.length === 0) {
+      tips.push({ icon: '🎯', text: 'Start by creating your first savings goal. Even small goals help build a savings habit!' });
+    } else {
+      const completed = goals.filter(g => (g.saved || 0) >= g.target);
+      if (completed.length > 0) tips.push({ icon: '🏆', text: `Congratulations! You've completed <strong>${completed.length}</strong> savings goal${completed.length > 1 ? 's' : ''}!` });
+
+      const nearComplete = goals.filter(g => { const p = g.target > 0 ? (g.saved||0)/g.target*100 : 0; return p >= 75 && p < 100; });
+      nearComplete.forEach(g => tips.push({ icon: '🔥', text: `<strong>${g.name}</strong> is almost done! Just <strong>${FinTran.formatCurrency(g.target - (g.saved||0))}</strong> more to go.` }));
+
+      const overdue = goals.filter(g => g.targetDate && new Date(g.targetDate) < new Date() && (g.saved||0) < g.target);
+      overdue.forEach(g => tips.push({ icon: '⏰', text: `<strong>${g.name}</strong> deadline has passed. Consider extending it or adjusting the target.` }));
+    }
+
+    tips.push({ icon: '💡', text: 'Automate your savings by setting aside money right after each payday.' });
+    tips.push({ icon: '📊', text: 'The 50/30/20 rule suggests putting <strong>20%</strong> of income towards savings and debt repayment.' });
+
+    document.getElementById('savingsTips').innerHTML = tips.slice(0, 5).map(t => `
+      <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:var(--surface-2);border-radius:var(--radius-sm);border-left:3px solid var(--green);">
+        <span style="font-size:16px;">${t.icon}</span>
+        <span style="font-size:12.5px;color:var(--text-2);line-height:1.5;">${t.text}</span>
+      </div>
+    `).join('');
+  }
+
+  // ─── Emoji Selection ───────────────────────────────────────────────
+  function selectEmoji(el) {
+    document.querySelectorAll('.emoji-opt').forEach(e => e.style.border = '2px solid transparent');
+    el.style.border = '2px solid var(--accent)';
+    el.style.borderRadius = '8px';
+    selectedEmoji = el.getAttribute('data-emoji');
+  }
+
+  // ─── Add Goal Modal ────────────────────────────────────────────────
+  function openAddGoal() {
+    editGoalId = null;
+    document.getElementById('goalModalTitle').textContent = 'New Savings Goal';
+    document.getElementById('goalName').value = '';
+    document.getElementById('goalTarget').value = '';
+    document.getElementById('goalColor').value = '#22c55e';
+    document.getElementById('goalDate').value = '';
+    selectedEmoji = '🎯';
+    document.querySelectorAll('.emoji-opt').forEach(e => e.style.border = '2px solid transparent');
+    document.querySelector('.emoji-opt[data-emoji="🎯"]').style.border = '2px solid var(--accent)';
+    document.getElementById('goalModal').classList.add('open');
+  }
+
+  function openEditGoal(id) {
+    const g = FinTran.getSavingsGoals().find(g2 => g2.id === id);
+    if (!g) return;
+    editGoalId = id;
+    document.getElementById('goalModalTitle').textContent = 'Edit Goal';
+    document.getElementById('goalName').value = g.name;
+    document.getElementById('goalTarget').value = g.target;
+    document.getElementById('goalColor').value = g.color || '#22c55e';
+    document.getElementById('goalDate').value = g.targetDate || '';
+    selectedEmoji = g.emoji || '🎯';
+    document.querySelectorAll('.emoji-opt').forEach(e => {
+      e.style.border = e.getAttribute('data-emoji') === selectedEmoji ? '2px solid var(--accent)' : '2px solid transparent';
+    });
+    document.getElementById('goalModal').classList.add('open');
+  }
+
+  function closeGoalModal() { document.getElementById('goalModal').classList.remove('open'); }
+
+  function saveGoal() {
+    const name   = document.getElementById('goalName').value.trim();
+    const target = parseFloat(document.getElementById('goalTarget').value);
+    const color  = document.getElementById('goalColor').value;
+    const date   = document.getElementById('goalDate').value;
+
+    if (!name) { FinTran.toast('Enter a goal name', 'error'); return; }
+    if (!target || target <= 0) { FinTran.toast('Enter a valid target amount', 'error'); return; }
+
+    if (editGoalId) {
+      FinTran.updateSavingsGoal(editGoalId, { name, target, color, targetDate: date || null, emoji: selectedEmoji });
+      FinTran.toast('Goal updated ✅', 'success');
+    } else {
+      FinTran.addSavingsGoal({ name, target, saved: 0, color, targetDate: date || null, emoji: selectedEmoji });
+      FinTran.toast('Savings goal created 🎯', 'success');
+    }
+
+    closeGoalModal();
+    renderAll();
+  }
+
+  // ─── Deposit Modal ─────────────────────────────────────────────────
+  function openDeposit(id) {
+    depositGoalId = id;
+    const g = FinTran.getSavingsGoals().find(g2 => g2.id === id);
+    if (!g) return;
+    document.getElementById('depositSubtitle').textContent = g.name;
+    document.getElementById('depositHint').textContent = `Remaining: ${FinTran.formatCurrency(Math.max(0, g.target - (g.saved || 0)))}`;
+    document.getElementById('depositAmount').value = '';
+    document.getElementById('depositNote').value = '';
+    document.getElementById('depositModal').classList.add('open');
+  }
+
+  function closeDepositModal() { document.getElementById('depositModal').classList.remove('open'); }
+
+  function confirmDeposit() {
+    const amount = parseFloat(document.getElementById('depositAmount').value);
+    const note   = document.getElementById('depositNote').value.trim();
+    if (!amount || amount <= 0) { FinTran.toast('Enter a valid amount', 'error'); return; }
+
+    FinTran.addSavingsDeposit(depositGoalId, amount, note);
+
+    const g = FinTran.getSavingsGoals().find(g2 => g2.id === depositGoalId);
+    if (g && (g.saved || 0) >= g.target) {
+      FinTran.toast('🎉 Goal completed! Congratulations!', 'success');
+    } else {
+      FinTran.toast('Deposit added! +' + FinTran.formatCurrency(amount), 'success');
+    }
+
+    closeDepositModal();
+    renderAll();
+  }
+
+  // ─── Delete Goal ───────────────────────────────────────────────────
+  function showDeleteGoal(id) {
+    deleteGoalId = id;
+    document.getElementById('delGoalModal').classList.add('open');
+  }
+
+  function confirmDeleteGoal() {
+    if (!deleteGoalId) return;
+    FinTran.deleteSavingsGoal(deleteGoalId);
+    deleteGoalId = null;
+    document.getElementById('delGoalModal').classList.remove('open');
+    FinTran.toast('Goal deleted', 'info');
+    renderAll();
+  }
+
+  // ─── Goal Details ──────────────────────────────────────────────────
+  function viewDetails(id) {
+    const g = FinTran.getSavingsGoals().find(g2 => g2.id === id);
+    if (!g) return;
+
+    const pct = g.target > 0 ? Math.min((g.saved || 0) / g.target * 100, 100) : 0;
+    const color = g.color || '#22c55e';
+    const deposits = g.deposits || [];
+
+    document.getElementById('detailsTitle').textContent = (g.emoji || '🎯') + ' ' + g.name;
+    document.getElementById('detailsSubtitle').textContent = `Target: ${FinTran.formatCurrencyFull(g.target)}`;
+
+    let depositsHtml = '';
+    if (deposits.length === 0) {
+      depositsHtml = '<div style="text-align:center;padding:20px;color:var(--text-3);font-size:13px;">No deposits yet</div>';
+    } else {
+      depositsHtml = deposits.slice().reverse().map(d => `
+        <div class="deposit-item">
+          <div style="width:36px;height:36px;border-radius:50%;background:${color}18;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <i class="fa-solid fa-coins" style="color:${color};font-size:13px;"></i>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:600;color:var(--text-1);">+${FinTran.formatCurrencyFull(d.amount)}</div>
+            <div style="font-size:11px;color:var(--text-3);">${d.note || 'Deposit'} • ${FinTran.formatDate(d.date)}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    document.getElementById('detailsBody').innerHTML = `
+      <div style="margin-bottom:20px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+          <span style="font-size:14px;font-weight:600;color:var(--text-2);">Progress</span>
+          <span style="font-size:14px;font-weight:800;color:${color};">${pct.toFixed(1)}%</span>
+        </div>
+        <div class="progress-bar" style="height:12px;border-radius:6px;">
+          <div class="progress-fill" style="width:${pct}%;background:${color};border-radius:6px;"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:8px;">
+          <span style="font-size:12px;color:var(--text-3);">Saved: <strong style="color:${color};">${FinTran.formatCurrencyFull(g.saved || 0)}</strong></span>
+          <span style="font-size:12px;color:var(--text-3);">Remaining: <strong>${FinTran.formatCurrencyFull(Math.max(0, g.target - (g.saved || 0)))}</strong></span>
+        </div>
+      </div>
+
+      <div style="font-size:14px;font-weight:700;color:var(--text-1);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border);">
+        Deposit History (${deposits.length})
+      </div>
+      <div style="max-height:300px;overflow-y:auto;">
+        ${depositsHtml}
+      </div>
+    `;
+
+    document.getElementById('detailsModal').classList.add('open');
+  }
+
+  // Close modals on overlay click
+  ['goalModal', 'depositModal', 'delGoalModal', 'detailsModal'].forEach(id => {
+    document.getElementById(id).addEventListener('click', e => {
+      if (e.target === document.getElementById(id)) document.getElementById(id).classList.remove('open');
+    });
+  });
+</script>
+</body>
+</html>

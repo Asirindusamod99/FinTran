@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Budgets – FinTran</title>
+  <meta name="description" content="Plan and manage your monthly budgets in FinTran.">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%236366f1%22/><text y=%22.9em%22 font-size=%2272%22 x=%2250%25%22 dominant-baseline=%22auto%22 text-anchor=%22middle%22>%F0%9F%92%B0</text></svg>">
+  <script>(function(){const t=localStorage.getItem('ft_theme');if(t)document.documentElement.setAttribute('data-theme',t);})();</script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .budget-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 18px 20px;
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+    .budget-card::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 4px;
+      border-radius: 2px 0 0 2px;
+    }
+    .budget-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .budget-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+    .budget-percent { font-size: 22px; font-weight: 800; min-width: 60px; text-align: right; }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon"><i class="fa-solid fa-wallet"></i></div>
+      <span class="logo-text">Fin<span>Tran</span></span>
+    </div>
+    <div class="sidebar-user" onclick="location.href='profile.html'" style="cursor:pointer;" title="View Profile">
+      <div class="user-avatar" id="userAvatar">A</div>
+      <div class="user-info">
+        <div class="user-name" id="userName">Loading...</div>
+        <div class="user-role">Personal Finance</div>
+      </div>
+    </div>
+    <div class="nav-section-label">Main</div>
+    <ul class="nav-links">
+      <li><a href="index.html"><div class="nav-icon"><i class="fa-solid fa-grid-2"></i></div>Dashboard</a></li>
+      <li><a href="income.html"><div class="nav-icon"><i class="fa-solid fa-arrow-trend-up"></i></div>Income</a></li>
+      <li><a href="expenses.html"><div class="nav-icon"><i class="fa-solid fa-arrow-trend-down"></i></div>Expenses</a></li>
+      <li class="active"><a href="budgets.html"><div class="nav-icon"><i class="fa-solid fa-sliders"></i></div>Budgets</a></li>
+      <li><a href="reports.html"><div class="nav-icon"><i class="fa-solid fa-chart-pie"></i></div>Reports</a></li>
+      <li><a href="savings.html"><div class="nav-icon"><i class="fa-solid fa-piggy-bank"></i></div>Savings</a></li>
+      <li><a href="wallet.html"><div class="nav-icon"><i class="fa-solid fa-wallet"></i></div>Wallet</a></li>
+    </ul>
+    <div class="nav-section-label" style="margin-top:8px;">Account</div>
+    <ul class="nav-links">
+      <li><a href="profile.html"><div class="nav-icon"><i class="fa-solid fa-user"></i></div>Profile</a></li>
+      <li><a href="settings.html"><div class="nav-icon"><i class="fa-solid fa-gear"></i></div>Settings</a></li>
+      <li><a href="#" onclick="FinTran.logout()"><div class="nav-icon"><i class="fa-solid fa-arrow-right-from-bracket"></i></div>Logout</a></li>
+    </ul>
+    <div class="sidebar-footer">
+      <button class="btn-icon" onclick="FinTran.toggleTheme();location.reload();" title="Toggle theme"><i class="fa-solid fa-sun"></i></button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main-content">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="btn-icon" id="menuToggle"><i class="fa-solid fa-bars"></i></button>
+        <div>
+          <div class="page-title">Budgets</div>
+          <div class="page-subtitle" id="monthLabel">Loading...</div>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <button class="btn btn-primary" onclick="openModal()">
+          <i class="fa-solid fa-plus"></i> Set Budget
+        </button>
+      </div>
+    </header>
+
+    <div class="page-content">
+
+      <!-- Summary Stats -->
+      <div class="stats-grid mb-24" id="budgetStats"></div>
+
+      <!-- Health Bar + Overview Chart -->
+      <div class="charts-grid mb-24">
+        <!-- Overall Budget Health -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Budget Health Overview</div>
+            <span class="badge" id="healthBadge">Good</span>
+          </div>
+          <div class="card-body">
+            <div style="margin-bottom:20px;">
+              <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+                <span style="font-size:13px;color:var(--text-2);">Overall budget used</span>
+                <span style="font-size:14px;font-weight:700;" id="overallPct">0%</span>
+              </div>
+              <div class="progress-bar" style="height:12px;border-radius:6px;">
+                <div class="progress-fill" id="overallBar" style="width:0%;background:#22c55e;border-radius:6px;transition:width 0.8s;"></div>
+              </div>
+            </div>
+            <div class="chart-wrap"><canvas id="budgetBarChart"></canvas></div>
+          </div>
+        </div>
+
+        <!-- Tips -->
+        <div class="card">
+          <div class="card-header"><div class="card-title">💡 Budget Tips</div></div>
+          <div class="card-body" style="display:flex;flex-direction:column;gap:14px;">
+            <div id="tipsList"></div>
+            <div style="background:var(--surface-2);border-radius:var(--radius-sm);padding:16px;border:1px solid var(--border);">
+              <div style="font-size:13px;font-weight:600;color:var(--text-1);margin-bottom:6px;">📌 50/30/20 Rule</div>
+              <div style="font-size:12px;color:var(--text-3);line-height:1.7;">
+                <div>🟢 <strong style="color:var(--green);">50%</strong> – Needs (rent, food, bills)</div>
+                <div>🟡 <strong style="color:var(--amber);">30%</strong> – Wants (entertainment, dining)</div>
+                <div>🔵 <strong style="color:var(--accent-light);">20%</strong> – Savings & investments</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Budget Cards -->
+      <div class="section-header">
+        <div class="section-title">Category Budgets</div>
+        <div style="font-size:12px;color:var(--text-3);" id="budgetCount"></div>
+      </div>
+      <div class="budget-grid mb-24" id="budgetCards"></div>
+
+      <!-- Empty state -->
+      <div id="emptyBudgets" style="display:none;">
+        <div class="card">
+          <div class="empty-state">
+            <div class="empty-icon"><i class="fa-solid fa-sliders"></i></div>
+            <h3>No budgets set yet</h3>
+            <p>Create monthly budgets for your spending categories to track your financial health</p>
+            <button class="btn btn-primary" style="margin-top:12px;" onclick="openModal()">
+              <i class="fa-solid fa-plus"></i> Create First Budget
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Budget Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="modalTitle">Set Budget</div>
+        <div class="modal-subtitle">Define spending limit for a category</div>
+      </div>
+      <button class="modal-close" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Category</label>
+        <div class="input-with-icon">
+          <i class="fa-solid fa-tag input-icon"></i>
+          <select id="budgetCat" class="form-control"></select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Monthly Limit (Rs.)</label>
+        <div class="input-with-prefix">
+          <span class="input-prefix">Rs.</span>
+          <input type="number" id="budgetAmt" class="form-control" placeholder="e.g. 15000" min="1" step="100">
+        </div>
+        <div class="form-hint" id="spentHint"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Alert at (%)</label>
+        <div class="input-with-icon">
+          <i class="fa-solid fa-bell input-icon"></i>
+          <input type="number" id="alertPct" class="form-control" value="80" min="10" max="100">
+        </div>
+        <div class="form-hint">You'll be flagged when spending reaches this percentage</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveBudget()">
+        <i class="fa-solid fa-floppy-disk"></i> Save Budget
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirm -->
+<div class="modal-overlay" id="delModal">
+  <div class="modal" style="max-width:360px;">
+    <div class="modal-body" style="text-align:center;padding:36px 24px;">
+      <div style="width:64px;height:64px;background:var(--red-bg);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:26px;color:var(--red);"><i class="fa-solid fa-trash"></i></div>
+      <div style="font-size:15px;font-weight:700;color:var(--text-1);margin-bottom:8px;">Remove this budget?</div>
+      <p style="font-size:13px;color:var(--text-3);">Your transaction history won't be affected.</p>
+      <div style="display:flex;gap:10px;justify-content:center;margin-top:20px;">
+        <button class="btn btn-ghost" onclick="document.getElementById('delModal').classList.remove('open')">Cancel</button>
+        <button class="btn btn-danger" onclick="confirmDelete()">Remove</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+  const user = FinTran.requireAuth();
+  let deleteTarget = null;
+  const now = new Date();
+
+  if (user) {
+    document.getElementById('userAvatar').textContent = user.avatar || user.name?.charAt(0) || 'U';
+    document.getElementById('monthLabel').textContent = FinTran.getMonthName(now.getMonth(), now.getFullYear());
+
+    // Populate category dropdown
+    FinTran.getCategories().filter(c => c.type === 'expense').forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.id;
+      opt.textContent = c.name;
+      document.getElementById('budgetCat').appendChild(opt);
+    });
+
+    renderAll();
+  }
+
+  function renderAll() {
+    const progress = FinTran.getBudgetProgress(now.getFullYear(), now.getMonth());
+    renderStats(progress);
+    renderCards(progress);
+    renderChart(progress);
+    renderTips(progress);
+  }
+
+  function renderStats(progress) {
+    const totalBudget = progress.reduce((s, b) => s + b.amount, 0);
+    const totalSpent  = progress.reduce((s, b) => s + b.spent,  0);
+    const overCount   = progress.filter(b => b.overBudget).length;
+    const remaining   = Math.max(0, totalBudget - totalSpent);
+
+    document.getElementById('budgetStats').innerHTML = `
+      <div class="stat-card accent">
+        <div class="stat-icon accent"><i class="fa-solid fa-sliders"></i></div>
+        <div class="stat-label">Total Budget</div>
+        <div class="stat-value">${FinTran.formatCurrency(totalBudget)}</div>
+        <div class="stat-change">${progress.length} categories</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-icon red"><i class="fa-solid fa-cart-shopping"></i></div>
+        <div class="stat-label">Total Spent</div>
+        <div class="stat-value">${FinTran.formatCurrency(totalSpent)}</div>
+        <div class="stat-change ${overCount > 0 ? 'neg' : 'pos'}">${overCount > 0 ? overCount + ' over budget' : 'On track'}</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-icon green"><i class="fa-solid fa-piggy-bank"></i></div>
+        <div class="stat-label">Remaining</div>
+        <div class="stat-value">${FinTran.formatCurrency(remaining)}</div>
+        <div class="stat-change pos">left to spend</div>
+      </div>
+      <div class="stat-card amber">
+        <div class="stat-icon amber"><i class="fa-solid fa-percent"></i></div>
+        <div class="stat-label">Budget Used</div>
+        <div class="stat-value">${totalBudget > 0 ? (totalSpent/totalBudget*100).toFixed(0) : 0}%</div>
+        <div class="stat-change">${now.toLocaleDateString('en',{month:'long'})}</div>
+      </div>
+    `;
+
+    // Overall health bar
+    const pct = totalBudget > 0 ? Math.min(totalSpent/totalBudget*100, 100) : 0;
+    document.getElementById('overallPct').textContent = pct.toFixed(0) + '%';
+    const bar = document.getElementById('overallBar');
+    bar.style.width = pct + '%';
+    bar.style.background = pct >= 100 ? '#ef4444' : pct >= 80 ? '#f59e0b' : '#22c55e';
+
+    const badge = document.getElementById('healthBadge');
+    if (overCount > 0) { badge.className = 'badge badge-expense'; badge.textContent = overCount + ' Over Budget'; }
+    else if (pct >= 80) { badge.className = 'badge badge-amber'; badge.textContent = 'Warning'; }
+    else { badge.className = 'badge badge-income'; badge.textContent = '✓ On Track'; }
+  }
+
+  function renderCards(progress) {
+    if (progress.length === 0) {
+      document.getElementById('budgetCards').innerHTML = '';
+      document.getElementById('emptyBudgets').style.display = 'block';
+      document.getElementById('budgetCount').textContent = '';
+      return;
+    }
+
+    document.getElementById('emptyBudgets').style.display = 'none';
+    document.getElementById('budgetCount').textContent = progress.length + ' active budgets';
+
+    document.getElementById('budgetCards').innerHTML = progress.map(b => {
+      const color = b.pct >= 100 ? '#ef4444' : b.pct >= 80 ? '#f59e0b' : '#22c55e';
+      return `
+        <div class="budget-card" style="--card-color:${b.category.color};">
+          <div style="position:absolute;left:0;top:0;bottom:0;width:4px;background:${color};border-radius:2px 0 0 2px;"></div>
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div class="cat-icon" style="background:${b.category.color}20;color:${b.category.color};">
+                <i class="fa-solid ${b.category.icon}"></i>
+              </div>
+              <div>
+                <div style="font-size:14px;font-weight:700;color:var(--text-1);">${b.category.name}</div>
+                <div style="font-size:11px;color:var(--text-3);">Monthly budget</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              ${b.pct >= 100 ? '<span class="badge badge-expense">Over</span>' : b.pct >= 80 ? '<span class="badge badge-amber">Warning</span>' : ''}
+              <button class="btn-icon" style="width:28px;height:28px;" onclick="openEdit('${b.categoryId}')"><i class="fa-solid fa-pen" style="font-size:11px;"></i></button>
+              <button class="btn-icon" style="width:28px;height:28px;color:var(--red);" onclick="showDel('${b.categoryId}')"><i class="fa-solid fa-trash" style="font-size:11px;"></i></button>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <div>
+              <span style="font-size:13px;color:var(--text-3);">Spent: </span>
+              <span style="font-size:14px;font-weight:700;color:${color};">${FinTran.formatCurrency(b.spent)}</span>
+              <span style="font-size:12px;color:var(--text-3);"> of ${FinTran.formatCurrency(b.amount)}</span>
+            </div>
+            <div class="budget-percent" style="color:${color};">${b.pct.toFixed(0)}%</div>
+          </div>
+          <div class="progress-bar" style="height:10px;border-radius:5px;">
+            <div class="progress-fill" style="width:${b.pct}%;background:${color};border-radius:5px;"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:8px;">
+            <span style="font-size:11px;color:var(--text-3);">Remaining: <strong style="color:var(--text-2);">${FinTran.formatCurrency(Math.max(0, b.amount - b.spent))}</strong></span>
+            <span style="font-size:11px;color:var(--text-3);">${Math.max(0, b.amount - b.spent) <= 0 ? '❌ Over limit' : b.pct >= 80 ? '⚠ Almost full' : '✓ Good'}</span>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function renderChart(progress) {
+    const existing = Chart.getChart('budgetBarChart');
+    if (existing) existing.destroy();
+    if (progress.length === 0) return;
+
+    const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+    Chart.defaults.color = isDark ? '#94a3b8' : '#475569';
+    Chart.defaults.font.family = 'Inter';
+
+    new Chart(document.getElementById('budgetBarChart').getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: progress.map(b => b.category.name),
+        datasets: [
+          { label: 'Budget',  data: progress.map(b => b.amount), backgroundColor: 'rgba(99,102,241,0.25)', borderColor: '#6366f1', borderWidth: 1, borderRadius: 4 },
+          { label: 'Spent',   data: progress.map(b => b.spent),  backgroundColor: progress.map(b => b.pct >= 100 ? 'rgba(239,68,68,0.7)' : b.pct >= 80 ? 'rgba(245,158,11,0.7)' : 'rgba(34,197,94,0.7)'),
+            borderColor: progress.map(b => b.pct >= 100 ? '#ef4444' : b.pct >= 80 ? '#f59e0b' : '#22c55e'), borderWidth: 1, borderRadius: 4 },
+        ],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'top', labels: { padding: 16, boxWidth: 12 } } },
+        scales: {
+          x: { grid: { display: false } },
+          y: { grid: { color: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }, ticks: { callback: v => 'Rs.' + (v/1000).toFixed(0) + 'K' } },
+        },
+      },
+    });
+  }
+
+  function renderTips(progress) {
+    const tips = [];
+    progress.forEach(b => {
+      if (b.pct >= 100) tips.push({ icon: '❌', color: 'var(--red)',   text: `<strong>${b.category.name}</strong> is ${FinTran.formatCurrency(b.spent - b.amount)} over budget!` });
+      else if (b.pct >= 80) tips.push({ icon: '⚠️', color: 'var(--amber)',  text: `<strong>${b.category.name}</strong> is at ${b.pct.toFixed(0)}% — slow down spending.` });
+    });
+    if (tips.length === 0) tips.push({ icon: '🎉', color: 'var(--green)', text: 'Great job! All budgets are within limits.' });
+
+    document.getElementById('tipsList').innerHTML = tips.slice(0, 4).map(t => `
+      <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:var(--surface-2);border-radius:var(--radius-sm);margin-bottom:8px;border-left:3px solid ${t.color};">
+        <span style="font-size:16px;">${t.icon}</span>
+        <span style="font-size:12.5px;color:var(--text-2);line-height:1.5;">${t.text}</span>
+      </div>
+    `).join('');
+  }
+
+  // ─── Modal ────────────────────────────────────────────────────────
+  function openModal() {
+    document.getElementById('budgetCat').value = document.getElementById('budgetCat').options[0]?.value || '';
+    document.getElementById('budgetAmt').value = '';
+    document.getElementById('alertPct').value  = '80';
+    document.getElementById('modalTitle').textContent = 'Set Budget';
+    updateSpentHint();
+    document.getElementById('modal').classList.add('open');
+  }
+
+  function openEdit(catId) {
+    const budgets = FinTran.getBudgets();
+    const b = budgets.find(b2 => b2.categoryId === catId);
+    if (!b) return;
+    document.getElementById('budgetCat').value = catId;
+    document.getElementById('budgetAmt').value = b.amount;
+    document.getElementById('alertPct').value  = b.alertPct || 80;
+    document.getElementById('modalTitle').textContent = 'Edit Budget';
+    updateSpentHint();
+    document.getElementById('modal').classList.add('open');
+  }
+
+  document.getElementById('budgetCat').addEventListener('change', updateSpentHint);
+
+  function updateSpentHint() {
+    const cat = document.getElementById('budgetCat').value;
+    const stat = FinTran.getMonthStats(now.getFullYear(), now.getMonth());
+    const spent = stat.transactions.filter(t => t.type === 'expense' && t.categoryId === cat).reduce((s,t) => s + Number(t.amount), 0);
+    document.getElementById('spentHint').textContent = spent > 0 ? `Already spent ${FinTran.formatCurrency(spent)} this month in this category.` : '';
+  }
+
+  function closeModal() { document.getElementById('modal').classList.remove('open'); }
+
+  function saveBudget() {
+    const cat    = document.getElementById('budgetCat').value;
+    const amount = parseFloat(document.getElementById('budgetAmt').value);
+    const alert  = parseInt(document.getElementById('alertPct').value) || 80;
+
+    if (!cat) { FinTran.toast('Select a category', 'error'); return; }
+    if (!amount || amount <= 0) { FinTran.toast('Enter a valid amount', 'error'); return; }
+
+    FinTran.saveBudget({ categoryId: cat, amount, alertPct: alert, month: now.getMonth(), year: now.getFullYear() });
+    closeModal();
+    FinTran.toast('Budget saved ✅', 'success');
+    renderAll();
+  }
+
+  function showDel(catId) {
+    deleteTarget = catId;
+    document.getElementById('delModal').classList.add('open');
+  }
+
+  function confirmDelete() {
+    if (!deleteTarget) return;
+    FinTran.deleteBudget(deleteTarget);
+    deleteTarget = null;
+    document.getElementById('delModal').classList.remove('open');
+    FinTran.toast('Budget removed', 'info');
+    renderAll();
+  }
+
+  document.getElementById('modal').addEventListener('click', e => { if (e.target === document.getElementById('modal')) closeModal(); });
+</script>
+</body>
+</html>

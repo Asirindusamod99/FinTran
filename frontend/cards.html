@@ -1,0 +1,996 @@
+﻿<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Cards – FinTran</title>
+  <meta name="description" content="Manage your bank and credit cards in FinTran.">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%236366f1%22/><text y=%22.9em%22 font-size=%2272%22 x=%2250%25%22 dominant-baseline=%22auto%22 text-anchor=%22middle%22>%F0%9F%92%B0</text></svg>">
+  <script>(function(){const t=localStorage.getItem('ft_theme');if(t)document.documentElement.setAttribute('data-theme',t);})();</script>
+  <style>
+    /* ─── Card Visuals ─── */
+    .cards-hero {
+      position: relative;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      min-height: 200px;
+      margin-bottom: 28px;
+      display: flex;
+      align-items: center;
+    }
+
+    .cards-hero-bg {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, #0f0f2e 0%, #1a1a4e 40%, #0d1a3a 100%);
+    }
+
+    .cards-hero-img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.35;
+    }
+
+    .cards-hero-content {
+      position: relative;
+      z-index: 2;
+      padding: 32px 36px;
+    }
+
+    .cards-hero h2 {
+      font-size: 28px;
+      font-weight: 800;
+      color: white;
+      margin-bottom: 6px;
+    }
+
+    .cards-hero p {
+      color: rgba(255,255,255,0.65);
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+
+    /* ─── Bank Card Visual ─── */
+    .card-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+
+    .bank-card {
+      position: relative;
+      width: 100%;
+      height: 200px;
+      border-radius: 20px;
+      padding: 24px 28px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.35s cubic-bezier(0.4,0,0.2,1), box-shadow 0.35s;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    }
+
+    .bank-card:hover {
+      transform: translateY(-8px) scale(1.02);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    }
+
+    /* Gradients per card type */
+    .bank-card.gradient-gold {
+      background: linear-gradient(135deg, #92400e 0%, #d97706 40%, #fbbf24 70%, #f59e0b 100%);
+    }
+    .bank-card.gradient-dark {
+      background: linear-gradient(135deg, #0f0f1a 0%, #1e1e3a 50%, #2d2d5a 100%);
+    }
+    .bank-card.gradient-ocean {
+      background: linear-gradient(135deg, #0c4a6e 0%, #0369a1 50%, #0ea5e9 100%);
+    }
+    .bank-card.gradient-emerald {
+      background: linear-gradient(135deg, #064e3b 0%, #065f46 50%, #047857 100%);
+    }
+    .bank-card.gradient-purple {
+      background: linear-gradient(135deg, #2e1065 0%, #4c1d95 50%, #7c3aed 100%);
+    }
+    .bank-card.gradient-rose {
+      background: linear-gradient(135deg, #881337 0%, #be123c 50%, #f43f5e 100%);
+    }
+
+    /* Shine overlay */
+    .bank-card::before {
+      content: '';
+      position: absolute;
+      top: -50%; left: -50%;
+      width: 200%; height: 200%;
+      background: radial-gradient(ellipse at 30% 30%, rgba(255,255,255,0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    /* Decorative circles */
+    .bank-card::after {
+      content: '';
+      position: absolute;
+      right: -40px; bottom: -40px;
+      width: 200px; height: 200px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.06);
+      pointer-events: none;
+    }
+
+    .card-circle-2 {
+      position: absolute;
+      right: 30px; bottom: -80px;
+      width: 240px; height: 240px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.04);
+    }
+
+    .card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      position: relative;
+      z-index: 1;
+    }
+
+    .card-bank-name {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: rgba(255,255,255,0.8);
+      text-transform: uppercase;
+    }
+
+    .card-type-logo {
+      font-size: 22px;
+      font-weight: 900;
+      color: rgba(255,255,255,0.9);
+    }
+
+    .card-chip {
+      width: 42px;
+      height: 32px;
+      border-radius: 6px;
+      background: linear-gradient(135deg, #d4af37, #f5e163, #b8941c);
+      position: relative;
+      z-index: 1;
+      margin-top: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      overflow: hidden;
+    }
+
+    .card-chip::before {
+      content: '';
+      position: absolute;
+      left: 50%; top: 0; bottom: 0;
+      width: 1px;
+      background: rgba(0,0,0,0.15);
+    }
+
+    .card-chip::after {
+      content: '';
+      position: absolute;
+      top: 50%; left: 0; right: 0;
+      height: 1px;
+      background: rgba(0,0,0,0.15);
+    }
+
+    .card-middle {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-contactless {
+      color: rgba(255,255,255,0.7);
+      font-size: 18px;
+      transform: rotate(90deg);
+    }
+
+    .card-bottom {
+      position: relative;
+      z-index: 1;
+    }
+
+    .card-number {
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: 3px;
+      color: rgba(255,255,255,0.92);
+      font-family: 'Courier New', monospace;
+      margin-bottom: 10px;
+    }
+
+    .card-info-row {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+    }
+
+    .card-holder-label {
+      font-size: 9px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.5);
+      margin-bottom: 2px;
+    }
+
+    .card-holder-name {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.9);
+    }
+
+    .card-expiry-block { text-align: right; }
+
+    .card-expiry-label {
+      font-size: 8px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.5);
+      margin-bottom: 2px;
+    }
+    .card-expiry-val {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: rgba(255,255,255,0.9);
+      font-family: 'Courier New', monospace;
+    }
+
+    /* Card actions */
+    .card-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      z-index: 10;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .bank-card-wrap:hover .card-actions { opacity: 1; }
+
+    .bank-card-wrap { position: relative; }
+
+    .card-action-btn {
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.5);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: white;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px;
+      cursor: pointer;
+      backdrop-filter: blur(6px);
+      transition: all 0.2s;
+    }
+    .card-action-btn:hover { background: rgba(239,68,68,0.7); }
+
+    /* Card balance badge */
+    .card-balance-badge {
+      position: absolute;
+      bottom: 10px;
+      right: 14px;
+      background: rgba(0,0,0,0.4);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 99px;
+      padding: 4px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.9);
+      z-index: 10;
+    }
+
+    /* Add Card placeholder */
+    .add-card-placeholder {
+      height: 200px;
+      border-radius: 20px;
+      border: 2px dashed var(--border-2);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      cursor: pointer;
+      transition: var(--transition);
+      background: var(--surface);
+      color: var(--text-3);
+    }
+
+    .add-card-placeholder:hover {
+      border-color: var(--accent);
+      color: var(--accent-light);
+      background: var(--accent-glow);
+    }
+
+    .add-card-placeholder .add-icon {
+      width: 50px; height: 50px;
+      border-radius: 50%;
+      background: var(--surface-2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+      transition: var(--transition);
+    }
+
+    .add-card-placeholder:hover .add-icon {
+      background: var(--accent);
+      color: white;
+    }
+
+    /* Network logos */
+    .visa-logo {
+      font-style: italic;
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: -1px;
+      color: white;
+    }
+
+    .mc-logo {
+      display: flex;
+      align-items: center;
+    }
+
+    .mc-circle-1, .mc-circle-2 {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+    }
+
+    .mc-circle-1 { background: rgba(255,60,0,0.9); margin-right: -8px; }
+    .mc-circle-2 { background: rgba(255,160,0,0.9); }
+
+    /* Card stats row */
+    .card-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    /* Transactions for card */
+    .card-txn-filter {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .gradient-select {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 8px;
+    }
+
+    .grad-swatch {
+      height: 44px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      border: 3px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .grad-swatch.active {
+      border-color: white;
+      box-shadow: 0 0 0 2px var(--accent);
+      transform: scale(1.08);
+    }
+
+    .grad-swatch.g-gold    { background: linear-gradient(135deg, #92400e, #fbbf24); }
+    .grad-swatch.g-dark    { background: linear-gradient(135deg, #0f0f1a, #2d2d5a); }
+    .grad-swatch.g-ocean   { background: linear-gradient(135deg, #0c4a6e, #0ea5e9); }
+    .grad-swatch.g-emerald { background: linear-gradient(135deg, #064e3b, #047857); }
+    .grad-swatch.g-purple  { background: linear-gradient(135deg, #2e1065, #7c3aed); }
+    .grad-swatch.g-rose    { background: linear-gradient(135deg, #881337, #f43f5e); }
+
+    /* Live preview card (small) */
+    .preview-card {
+      width: 100%;
+      height: 160px;
+      border-radius: 14px;
+      padding: 18px 22px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+      position: relative;
+      transition: all 0.3s;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+    }
+
+    .preview-card::before {
+      content: '';
+      position: absolute;
+      top: -40%; left: -40%;
+      width: 180%; height: 180%;
+      background: radial-gradient(ellipse at 30% 30%, rgba(255,255,255,0.15) 0%, transparent 60%);
+    }
+
+    .preview-card::after {
+      content: '';
+      position: absolute;
+      right: -30px; bottom: -30px;
+      width: 160px; height: 160px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.05);
+    }
+
+    .prev-rel { position: relative; z-index: 1; }
+
+    @media (max-width: 600px) {
+      .card-list { grid-template-columns: 1fr; }
+      .card-stats { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon"><i class="fa-solid fa-wallet"></i></div>
+      <span class="logo-text">Fin<span>Tran</span></span>
+    </div>
+    <div class="sidebar-user" onclick="location.href='profile.html'" style="cursor:pointer;" title="View Profile">
+      <div class="user-avatar" id="userAvatar">A</div>
+      <div class="user-info">
+        <div class="user-name" id="userName">Loading...</div>
+        <div class="user-role">Personal Finance</div>
+      </div>
+    </div>
+    <div class="nav-section-label">Main</div>
+    <ul class="nav-links">
+      <li><a href="index.html"><div class="nav-icon"><i class="fa-solid fa-grid-2"></i></div>Dashboard</a></li>
+      <li><a href="income.html"><div class="nav-icon"><i class="fa-solid fa-arrow-trend-up"></i></div>Income</a></li>
+      <li><a href="expenses.html"><div class="nav-icon"><i class="fa-solid fa-arrow-trend-down"></i></div>Expenses</a></li>
+      <li><a href="budgets.html"><div class="nav-icon"><i class="fa-solid fa-sliders"></i></div>Budgets</a></li>
+      <li><a href="reports.html"><div class="nav-icon"><i class="fa-solid fa-chart-pie"></i></div>Reports</a></li>
+      <li class="active"><a href="cards.html"><div class="nav-icon"><i class="fa-solid fa-credit-card"></i></div>My Cards</a></li>
+    </ul>
+    <div class="nav-section-label" style="margin-top:8px;">Account</div>
+    <ul class="nav-links">
+      <li><a href="profile.html"><div class="nav-icon"><i class="fa-solid fa-user"></i></div>Profile</a></li>
+      <li><a href="settings.html"><div class="nav-icon"><i class="fa-solid fa-gear"></i></div>Settings</a></li>
+      <li><a href="#" onclick="FinTran.logout()"><div class="nav-icon"><i class="fa-solid fa-arrow-right-from-bracket"></i></div>Logout</a></li>
+    </ul>
+    <div class="sidebar-footer">
+      <button class="btn-icon" onclick="FinTran.toggleTheme();location.reload();" title="Toggle theme"><i class="fa-solid fa-sun"></i></button>
+      <span class="text-sm text-muted" style="margin-left:6px;">Theme</span>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main-content">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="btn-icon" id="menuToggle"><i class="fa-solid fa-bars"></i></button>
+        <div>
+          <div class="page-title">My Cards</div>
+          <div class="page-subtitle">Manage your debit & credit cards</div>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <button class="btn btn-primary" onclick="openAddModal()">
+          <i class="fa-solid fa-plus"></i> Add Card
+        </button>
+      </div>
+    </header>
+
+    <div class="page-content">
+
+      <!-- Hero Banner -->
+      <div class="cards-hero">
+        <div class="cards-hero-bg"></div>
+        <img src="C:\Users\Crytek Store\.gemini\antigravity\brain\c6c428d7-da81-4df7-bf5a-d6e0996ae81d\bank_cards_hero_1773209087962.png"
+             class="cards-hero-img" alt="Bank cards" onerror="this.style.display='none'">
+        <div class="cards-hero-content">
+          <h2>💳 Your Financial Cards</h2>
+          <p>Keep track of all your debit and credit cards in one place</p>
+          <div style="display:flex;gap:16px;flex-wrap:wrap;">
+            <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.1);border-radius:999px;padding:8px 16px;border:1px solid rgba(255,255,255,0.15);">
+              <i class="fa-solid fa-shield-halved" style="color:#22c55e;"></i>
+              <span style="font-size:12px;color:rgba(255,255,255,0.85);font-weight:600;">No card data sent online</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.1);border-radius:999px;padding:8px 16px;border:1px solid rgba(255,255,255,0.15);">
+              <i class="fa-solid fa-lock" style="color:#f59e0b;"></i>
+              <span style="font-size:12px;color:rgba(255,255,255,0.85);font-weight:600;">Stored locally & securely</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Summary Stats -->
+      <div class="card-stats" id="cardStats"></div>
+
+      <!-- Cards Grid -->
+      <div class="section-header">
+        <div class="section-title">Your Cards</div>
+        <div style="font-size:12px;color:var(--text-3);" id="cardCount">0 cards</div>
+      </div>
+
+      <div class="card-list" id="cardList">
+        <!-- populated by JS -->
+      </div>
+
+      <!-- Recent Transactions -->
+      <div class="card mb-24" id="recentSection">
+        <div class="card-header">
+          <div class="card-title">💳 Recent Card Transactions</div>
+          <a href="expenses.html" class="section-action">View all expenses →</a>
+        </div>
+        <div class="card-body" style="padding-top:8px;" id="recentCardTxns"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ━━━ ADD CARD MODAL ━━━ -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="modalTitle">Add New Card</div>
+        <div class="modal-subtitle">Enter your card details below</div>
+      </div>
+      <button class="modal-close" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Live Preview -->
+      <div class="preview-card gradient-dark" id="previewCard" style="margin-bottom:24px;">
+        <div class="prev-rel" style="display:flex;align-items:flex-start;justify-content:space-between;">
+          <div>
+            <div class="card-bank-name" id="prevBank">MY BANK</div>
+            <div class="card-chip" style="margin-top:10px;"></div>
+          </div>
+          <div id="prevNetwork" class="visa-logo">VISA</div>
+        </div>
+        <div class="prev-rel">
+          <div class="card-number" id="prevNumber">•••• •••• •••• ••••</div>
+          <div class="card-info-row">
+            <div>
+              <div class="card-holder-label">Card Holder</div>
+              <div class="card-holder-name" id="prevName">YOUR NAME</div>
+            </div>
+            <div class="card-expiry-block">
+              <div class="card-expiry-label">Expires</div>
+              <div class="card-expiry-val" id="prevExpiry">MM/YY</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <input type="hidden" id="editCardId">
+
+      <!-- Card gradient chooser -->
+      <div class="form-group">
+        <label class="form-label">Card Color</label>
+        <div class="gradient-select">
+          <div class="grad-swatch g-gold    active" data-grad="gradient-gold"    onclick="selectGrad(this,'gradient-gold')"></div>
+          <div class="grad-swatch g-dark"           data-grad="gradient-dark"    onclick="selectGrad(this,'gradient-dark')"></div>
+          <div class="grad-swatch g-ocean"          data-grad="gradient-ocean"   onclick="selectGrad(this,'gradient-ocean')"></div>
+          <div class="grad-swatch g-emerald"        data-grad="gradient-emerald" onclick="selectGrad(this,'gradient-emerald')"></div>
+          <div class="grad-swatch g-purple"         data-grad="gradient-purple"  onclick="selectGrad(this,'gradient-purple')"></div>
+          <div class="grad-swatch g-rose"           data-grad="gradient-rose"    onclick="selectGrad(this,'gradient-rose')"></div>
+        </div>
+      </div>
+
+      <!-- Form fields -->
+      <div class="form-group">
+        <label class="form-label">Card Holder Name</label>
+        <div class="input-with-icon">
+          <i class="fa-solid fa-user input-icon"></i>
+          <input type="text" id="cardName" class="form-control" placeholder="e.g. Amara Perera" maxlength="26"
+            oninput="document.getElementById('prevName').textContent = (this.value||'YOUR NAME').toUpperCase()">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Bank / Issuer Name</label>
+        <div class="input-with-icon">
+          <i class="fa-solid fa-building-columns input-icon"></i>
+          <input type="text" id="cardBank" class="form-control" placeholder="e.g. ComBank, Sampath, BOC" maxlength="20"
+            oninput="document.getElementById('prevBank').textContent = (this.value||'MY BANK').toUpperCase()">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Card Number</label>
+        <div class="input-with-icon">
+          <i class="fa-solid fa-credit-card input-icon"></i>
+          <input type="text" id="cardNumber" class="form-control" placeholder="1234 5678 9012 3456"
+            maxlength="19" oninput="formatCardNum(this)" inputmode="numeric">
+        </div>
+        <div class="form-hint">Only last 4 digits will be displayed on the card</div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Expiry Date</label>
+          <div class="input-with-icon">
+            <i class="fa-regular fa-calendar input-icon"></i>
+            <input type="text" id="cardExpiry" class="form-control" placeholder="MM/YY" maxlength="5"
+              oninput="formatExpiry(this)" inputmode="numeric">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Card Type</label>
+          <div class="input-with-icon">
+            <i class="fa-solid fa-credit-card input-icon"></i>
+            <select id="cardType" class="form-control" onchange="updateNetwork()">
+              <option value="debit">Debit Card</option>
+              <option value="credit">Credit Card</option>
+              <option value="prepaid">Prepaid Card</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Network</label>
+          <div class="input-with-icon">
+            <i class="fa-solid fa-globe input-icon"></i>
+            <select id="cardNetwork" class="form-control" onchange="updateNetwork()">
+              <option value="visa">Visa</option>
+              <option value="mastercard">Mastercard</option>
+              <option value="amex">Amex</option>
+              <option value="union">UnionPay</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Credit Limit / Balance (Rs.)</label>
+          <div class="input-with-prefix">
+            <span class="input-prefix">Rs.</span>
+            <input type="number" id="cardLimit" class="form-control" placeholder="e.g. 150000" min="0">
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Notes (optional)</label>
+        <textarea id="cardNotes" class="form-control" rows="2" placeholder="e.g. Primary card, savings account..." style="resize:vertical;"></textarea>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveCard()">
+        <i class="fa-solid fa-floppy-disk"></i> <span id="saveBtnTxt">Save Card</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirm -->
+<div class="modal-overlay" id="delModal">
+  <div class="modal" style="max-width:360px;">
+    <div class="modal-body" style="text-align:center;padding:36px 24px;">
+      <div style="width:64px;height:64px;background:var(--red-bg);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:26px;color:var(--red);">
+        <i class="fa-solid fa-trash"></i>
+      </div>
+      <div style="font-size:15px;font-weight:700;color:var(--text-1);margin-bottom:8px;">Remove this card?</div>
+      <p style="font-size:13px;color:var(--text-3);">The card will be removed from your list. Your transaction history won't be affected.</p>
+      <div style="display:flex;gap:10px;justify-content:center;margin-top:20px;">
+        <button class="btn btn-ghost" onclick="document.getElementById('delModal').classList.remove('open')">Cancel</button>
+        <button class="btn btn-danger" onclick="confirmDelete()">Remove Card</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+  const user = FinTran.requireAuth();
+  let selectedGrad = 'gradient-gold';
+  let deleteCardId = null;
+
+  const NETWORK_HTML = {
+    visa:       '<span class="visa-logo">VISA</span>',
+    mastercard: '<span class="mc-logo"><span class="mc-circle-1"></span><span class="mc-circle-2"></span></span>',
+    amex:       '<span style="font-size:12px;font-weight:900;letter-spacing:1px;color:white;">AMEX</span>',
+    union:      '<span style="font-size:11px;font-weight:900;color:white;">銀聯</span>',
+  };
+
+  if (user) {
+    document.getElementById('userAvatar').textContent = user.avatar || user.name?.charAt(0) || 'U';
+    renderCards();
+    renderStats();
+    renderRecentTxns();
+  }
+
+  // ─── Get/Save Cards ───────────────────────────────────────────────
+  function getCards() { return JSON.parse(localStorage.getItem('ft_cards') || '[]'); }
+  function saveCards(cards) { localStorage.setItem('ft_cards', JSON.stringify(cards)); }
+
+  // ─── Render Card Grid ─────────────────────────────────────────────
+  function renderCards() {
+    const cards = getCards();
+    const list  = document.getElementById('cardList');
+    document.getElementById('cardCount').textContent = cards.length + ' card' + (cards.length !== 1 ? 's' : '');
+
+    let html = cards.map(c => `
+      <div class="bank-card-wrap">
+        <div class="card-actions">
+          <button class="card-action-btn" onclick="openEdit('${c.id}')" title="Edit"><i class="fa-solid fa-pen" style="font-size:11px;"></i></button>
+          <button class="card-action-btn" onclick="showDel('${c.id}')" title="Remove"><i class="fa-solid fa-trash" style="font-size:11px;"></i></button>
+        </div>
+        <div class="bank-card ${c.gradient || 'gradient-dark'}">
+          <div class="card-circle-2"></div>
+          <div class="card-top">
+            <div>
+              <div class="card-bank-name">${(c.bank || 'MY BANK').toUpperCase()}</div>
+              <div class="card-chip"></div>
+            </div>
+            <div>${NETWORK_HTML[c.network] || NETWORK_HTML.visa}</div>
+          </div>
+          <div class="card-middle">
+            <i class="fa-solid fa-wifi card-contactless"></i>
+          </div>
+          <div class="card-bottom">
+            <div class="card-number">•••• •••• •••• ${c.lastFour || '••••'}</div>
+            <div class="card-info-row">
+              <div>
+                <div class="card-holder-label">Card Holder</div>
+                <div class="card-holder-name">${(c.name || 'CARDHOLDER').toUpperCase()}</div>
+              </div>
+              <div class="card-expiry-block">
+                <div class="card-expiry-label">Expires</div>
+                <div class="card-expiry-val">${c.expiry || '--/--'}</div>
+              </div>
+            </div>
+          </div>
+          ${c.limit ? `<div class="card-balance-badge">Limit: ${FinTran.formatCurrency(c.limit)}</div>` : ''}
+        </div>
+        <div style="margin-top:12px;padding:0 4px;display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-size:13px;font-weight:700;color:var(--text-1);">${c.bank || 'Card'}</div>
+            <div style="font-size:11px;color:var(--text-3);margin-top:2px;">
+              <span class="badge ${c.type === 'credit' ? 'badge-accent' : c.type === 'prepaid' ? 'badge-amber' : 'badge-income'}" style="padding:2px 8px;">
+                ${c.type === 'credit' ? 'Credit' : c.type === 'prepaid' ? 'Prepaid' : 'Debit'}
+              </span>
+            </div>
+          </div>
+          ${c.notes ? `<div style="font-size:11px;color:var(--text-3);max-width:140px;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.notes}</div>` : ''}
+        </div>
+      </div>
+    `).join('');
+
+    // Add card placeholder
+    html += `
+      <div class="add-card-placeholder" onclick="openAddModal()">
+        <div class="add-icon"><i class="fa-solid fa-plus"></i></div>
+        <div style="font-size:14px;font-weight:600;">Add New Card</div>
+        <div style="font-size:12px;">Click to add a debit or credit card</div>
+      </div>
+    `;
+
+    list.innerHTML = html;
+  }
+
+  // ─── Stats ────────────────────────────────────────────────────────
+  function renderStats() {
+    const cards = getCards();
+    const creditCount = cards.filter(c => c.type === 'credit').length;
+    const debitCount  = cards.filter(c => c.type === 'debit').length;
+    const totalLimit  = cards.filter(c => c.limit).reduce((s, c) => s + Number(c.limit), 0);
+
+    document.getElementById('cardStats').innerHTML = `
+      <div class="stat-card accent">
+        <div class="stat-icon accent"><i class="fa-solid fa-credit-card"></i></div>
+        <div class="stat-label">Total Cards</div>
+        <div class="stat-value">${cards.length}</div>
+        <div class="stat-change">${debitCount} debit, ${creditCount} credit</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-icon green"><i class="fa-solid fa-building-columns"></i></div>
+        <div class="stat-label">Banks Linked</div>
+        <div class="stat-value">${new Set(cards.map(c => c.bank).filter(Boolean)).size}</div>
+        <div class="stat-change pos">financial institutions</div>
+      </div>
+      <div class="stat-card amber">
+        <div class="stat-icon amber"><i class="fa-solid fa-coins"></i></div>
+        <div class="stat-label">Total Credit Limit</div>
+        <div class="stat-value">${totalLimit > 0 ? FinTran.formatCurrency(totalLimit) : 'N/A'}</div>
+        <div class="stat-change">combined limit</div>
+      </div>
+    `;
+  }
+
+  // ─── Recent Transactions ─────────────────────────────────────────
+  function renderRecentTxns() {
+    const txns = FinTran.getTransactions().slice(0, 6);
+    if (txns.length === 0) {
+      document.getElementById('recentCardTxns').innerHTML = `
+        <div class="empty-state" style="padding:30px 20px;">
+          <div class="empty-icon"><i class="fa-solid fa-receipt"></i></div>
+          <h3>No transactions yet</h3>
+          <p>Add expenses and income to see them here</p>
+        </div>`;
+      return;
+    }
+    document.getElementById('recentCardTxns').innerHTML = txns.map(t => {
+      const cat = FinTran.getCategoryById(t.categoryId);
+      return `
+        <div class="txn-item">
+          <div style="${FinTran.catIconStyle(cat.color)}">
+            <i class="fa-solid ${cat.icon}"></i>
+          </div>
+          <div class="txn-info">
+            <div class="txn-desc">${t.description || cat.name}</div>
+            <div class="txn-meta">${cat.name} · ${FinTran.formatDate(t.date)}</div>
+          </div>
+          <div class="txn-amount ${t.type}">
+            ${t.type === 'income' ? '+' : '-'}${FinTran.formatCurrency(t.amount)}
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // ─── Add/Edit Modal ───────────────────────────────────────────────
+  function openAddModal() {
+    document.getElementById('editCardId').value = '';
+    document.getElementById('cardName').value   = '';
+    document.getElementById('cardBank').value   = '';
+    document.getElementById('cardNumber').value = '';
+    document.getElementById('cardExpiry').value = '';
+    document.getElementById('cardType').value   = 'debit';
+    document.getElementById('cardNetwork').value= 'visa';
+    document.getElementById('cardLimit').value  = '';
+    document.getElementById('cardNotes').value  = '';
+    document.getElementById('modalTitle').textContent = 'Add New Card';
+    document.getElementById('saveBtnTxt').textContent = 'Save Card';
+
+    selectGrad(document.querySelector('.grad-swatch.g-gold'), 'gradient-gold');
+    resetPreview();
+    document.getElementById('addModal').classList.add('open');
+  }
+
+  function openEdit(id) {
+    const cards = getCards();
+    const c = cards.find(x => x.id === id);
+    if (!c) return;
+
+    document.getElementById('editCardId').value = id;
+    document.getElementById('cardName').value   = c.name || '';
+    document.getElementById('cardBank').value   = c.bank || '';
+    document.getElementById('cardNumber').value = c.lastFour ? '•••• •••• •••• ' + c.lastFour : '';
+    document.getElementById('cardExpiry').value = c.expiry || '';
+    document.getElementById('cardType').value   = c.type || 'debit';
+    document.getElementById('cardNetwork').value= c.network || 'visa';
+    document.getElementById('cardLimit').value  = c.limit || '';
+    document.getElementById('cardNotes').value  = c.notes || '';
+    document.getElementById('modalTitle').textContent = 'Edit Card';
+    document.getElementById('saveBtnTxt').textContent = 'Update Card';
+
+    // Select gradient
+    const gradBtn = document.querySelector(`.grad-swatch[data-grad="${c.gradient}"]`);
+    if (gradBtn) selectGrad(gradBtn, c.gradient);
+
+    // Update preview
+    document.getElementById('prevName').textContent  = (c.name || 'YOUR NAME').toUpperCase();
+    document.getElementById('prevBank').textContent  = (c.bank || 'MY BANK').toUpperCase();
+    document.getElementById('prevExpiry').textContent= c.expiry || 'MM/YY';
+    document.getElementById('prevNumber').textContent= '•••• •••• •••• ' + (c.lastFour || '••••');
+    document.getElementById('prevNetwork').innerHTML  = NETWORK_HTML[c.network] || NETWORK_HTML.visa;
+
+    document.getElementById('addModal').classList.add('open');
+  }
+
+  function closeModal() { document.getElementById('addModal').classList.remove('open'); }
+
+  function resetPreview() {
+    document.getElementById('prevName').textContent   = 'YOUR NAME';
+    document.getElementById('prevBank').textContent   = 'MY BANK';
+    document.getElementById('prevExpiry').textContent = 'MM/YY';
+    document.getElementById('prevNumber').textContent = '•••• •••• •••• ••••';
+    document.getElementById('prevNetwork').innerHTML  = NETWORK_HTML.visa;
+  }
+
+  function selectGrad(el, grad) {
+    document.querySelectorAll('.grad-swatch').forEach(e => e.classList.remove('active'));
+    el.classList.add('active');
+    selectedGrad = grad;
+    const preview = document.getElementById('previewCard');
+    preview.className = 'preview-card ' + grad;
+  }
+
+  function updateNetwork() {
+    const net = document.getElementById('cardNetwork').value;
+    document.getElementById('prevNetwork').innerHTML = NETWORK_HTML[net] || NETWORK_HTML.visa;
+  }
+
+  function formatCardNum(input) {
+    let v = input.value.replace(/\D/g, '').slice(0, 16);
+    let parts = [];
+    for (let i = 0; i < v.length; i += 4) parts.push(v.slice(i, i + 4));
+    input.value = parts.join(' ');
+    // Update preview with last 4
+    const lastFour = v.slice(-4) || '••••';
+    document.getElementById('prevNumber').textContent = '•••• •••• •••• ' + lastFour;
+    // Auto-detect network
+    if (v[0] === '4') { document.getElementById('cardNetwork').value='visa'; updateNetwork(); }
+    else if (v[0] === '5') { document.getElementById('cardNetwork').value='mastercard'; updateNetwork(); }
+    else if (v.startsWith('34') || v.startsWith('37')) { document.getElementById('cardNetwork').value='amex'; updateNetwork(); }
+  }
+
+  function formatExpiry(input) {
+    let v = input.value.replace(/\D/g, '');
+    if (v.length > 2) v = v.slice(0,2) + '/' + v.slice(2,4);
+    input.value = v;
+    document.getElementById('prevExpiry').textContent = v || 'MM/YY';
+  }
+
+  function saveCard() {
+    const name    = document.getElementById('cardName').value.trim();
+    const bank    = document.getElementById('cardBank').value.trim();
+    const numRaw  = document.getElementById('cardNumber').value.replace(/\D/g, '');
+    const expiry  = document.getElementById('cardExpiry').value.trim();
+    const type    = document.getElementById('cardType').value;
+    const network = document.getElementById('cardNetwork').value;
+    const limit   = document.getElementById('cardLimit').value;
+    const notes   = document.getElementById('cardNotes').value.trim();
+    const editId  = document.getElementById('editCardId').value;
+
+    if (!name) { FinTran.toast('Enter the card holder name', 'error'); return; }
+    if (!bank)  { FinTran.toast('Enter the bank / issuer name', 'error'); return; }
+    if (numRaw.length < 4 && !editId) { FinTran.toast('Enter at least 4 digits of the card number', 'error'); return; }
+    if (!expiry) { FinTran.toast('Enter the expiry date', 'error'); return; }
+
+    const lastFour = numRaw.slice(-4) || '••••';
+    const cardData = { name, bank, lastFour, expiry, type, network, gradient: selectedGrad, limit: limit ? Number(limit) : null, notes };
+
+    const cards = getCards();
+    if (editId) {
+      const idx = cards.findIndex(c => c.id === editId);
+      if (idx >= 0) cards[idx] = { ...cards[idx], ...cardData };
+      FinTran.toast('Card updated ✅', 'success');
+    } else {
+      cardData.id = 'card_' + Date.now();
+      cardData.addedAt = new Date().toISOString();
+      cards.push(cardData);
+      FinTran.toast('Card added successfully! 💳', 'success');
+    }
+    saveCards(cards);
+    closeModal();
+    renderCards();
+    renderStats();
+  }
+
+  function showDel(id) {
+    deleteCardId = id;
+    document.getElementById('delModal').classList.add('open');
+  }
+
+  function confirmDelete() {
+    if (!deleteCardId) return;
+    const cards = getCards().filter(c => c.id !== deleteCardId);
+    saveCards(cards);
+    deleteCardId = null;
+    document.getElementById('delModal').classList.remove('open');
+    FinTran.toast('Card removed', 'info');
+    renderCards();
+    renderStats();
+  }
+
+  // Close modals on overlay click
+  document.getElementById('addModal').addEventListener('click', e => { if (e.target === document.getElementById('addModal')) closeModal(); });
+</script>
+</body>
+</html>

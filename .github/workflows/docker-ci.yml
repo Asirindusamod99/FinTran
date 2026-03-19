@@ -1,0 +1,42 @@
+name: FinTran Advanced CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-secure:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # 1. Backend එක Build කිරීම
+      - name: Build Backend Image
+        run: docker build -t asirindu99/fintran-backend:${{ github.sha }} -t asirindu99/fintran-backend:latest ./backend
+
+      # 2. Security Scan (Backend) - Trivy පාවිච්චි කරලා ලෙඩ හොයනවා
+      - name: Scan Backend Image for Vulnerabilities
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'asirindu99/fintran-backend:latest'
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
+
+      # 3. Frontend එක Build කිරීම
+      - name: Build Frontend Image
+        run: docker build -t asirindu99/fintran-frontend:${{ github.sha }} -t asirindu99/fintran-frontend:latest ./frontend
+
+      # 4. Security Scan (Frontend)
+      - name: Scan Frontend Image for Vulnerabilities
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'asirindu99/fintran-frontend:latest'
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Build Success Notification
+        run: echo "Build and Security Scan completed for commit ${{ github.sha }}"

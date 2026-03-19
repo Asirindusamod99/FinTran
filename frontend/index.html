@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard – FinTran</title>
+  <meta name="description" content="FinTran Dashboard – overview of your income, expenses, and budget health.">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%236366f1%22/><text y=%22.9em%22 font-size=%2272%22 x=%2250%25%22 dominant-baseline=%22auto%22 text-anchor=%22middle%22>%F0%9F%92%B0</text></svg>">
+  <script>(function(){const t=localStorage.getItem('ft_theme');if(t)document.documentElement.setAttribute('data-theme',t);})();</script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon"><i class="fa-solid fa-wallet"></i></div>
+      <span class="logo-text">Fin<span>Tran</span></span>
+    </div>
+    <div class="sidebar-user" onclick="location.href='profile.html'" style="cursor:pointer;" title="View Profile">
+      <div class="user-avatar" id="userAvatar">A</div>
+      <div class="user-info">
+        <div class="user-name" id="userName">Loading...</div>
+        <div class="user-role">Personal Finance</div>
+      </div>
+    </div>
+    <div class="nav-section-label">Main</div>
+    <ul class="nav-links">
+      <li class="active"><a href="index.html"><div class="nav-icon"><i class="fa-solid fa-grid-2"></i></div>Dashboard</a></li>
+      <li><a href="income.html"><div class="nav-icon"><i class="fa-solid fa-arrow-trend-up"></i></div>Income</a></li>
+      <li><a href="expenses.html"><div class="nav-icon"><i class="fa-solid fa-arrow-trend-down"></i></div>Expenses</a></li>
+      <li><a href="budgets.html"><div class="nav-icon"><i class="fa-solid fa-sliders"></i></div>Budgets</a></li>
+      <li><a href="reports.html"><div class="nav-icon"><i class="fa-solid fa-chart-pie"></i></div>Reports</a></li>
+      <li><a href="savings.html"><div class="nav-icon"><i class="fa-solid fa-piggy-bank"></i></div>Savings</a></li>
+      <li><a href="wallet.html"><div class="nav-icon"><i class="fa-solid fa-wallet"></i></div>Wallet</a></li>
+    </ul>
+    <div class="nav-section-label" style="margin-top:8px;">Account</div>
+    <ul class="nav-links">
+      <li><a href="profile.html"><div class="nav-icon"><i class="fa-solid fa-user"></i></div>Profile</a></li>
+      <li><a href="settings.html"><div class="nav-icon"><i class="fa-solid fa-gear"></i></div>Settings</a></li>
+      <li><a href="#" onclick="FinTran.logout()"><div class="nav-icon"><i class="fa-solid fa-arrow-right-from-bracket"></i></div>Logout</a></li>
+    </ul>
+    <div class="sidebar-footer">
+      <button class="btn-icon" id="themeToggle" title="Toggle theme"><i class="fa-solid fa-sun"></i></button>
+      <span class="text-sm text-muted" style="margin-left:6px;">Dark Mode</span>
+      <div style="position:absolute;bottom:6px;left:0;right:0;text-align:center;font-size:9px;color:var(--text-3);">Built by <span style="color:var(--accent-light);font-weight:700;">ElecSpark</span></div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main-content">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="btn-icon" id="menuToggle"><i class="fa-solid fa-bars"></i></button>
+        <div>
+          <div class="page-title">Dashboard</div>
+          <div class="page-subtitle" id="currentMonth">Loading...</div>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <button class="btn btn-success btn-sm" onclick="openModal('income')">
+          <i class="fa-solid fa-plus"></i> Income
+        </button>
+        <button class="btn btn-danger btn-sm" onclick="openModal('expense')">
+          <i class="fa-solid fa-minus"></i> Expense
+        </button>
+        <button class="btn-icon" id="themeToggle2" title="Toggle theme" onclick="FinTran.toggleTheme();location.reload();">
+          <i class="fa-solid fa-sun"></i>
+        </button>
+      </div>
+    </header>
+
+    <div class="page-content">
+
+      <!-- Stats Grid -->
+      <div class="stats-grid" id="statsGrid"></div>
+
+      <!-- Charts Row -->
+      <div class="charts-grid-3 mb-24 fade-up" style="animation-delay: 0.4s;">
+        <!-- Balance Trend -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Income vs Expenses</div>
+              <div class="card-subtitle">Last 6 months</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="chart-wrap"><canvas id="barChart"></canvas></div>
+          </div>
+        </div>
+
+        <!-- Spending by Category -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Spending Breakdown</div>
+              <div class="card-subtitle">This month</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="chart-wrap" style="min-height:180px;"><canvas id="donutChart"></canvas></div>
+            <div id="donutLegend" style="margin-top:12px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Row -->
+      <div class="charts-grid mb-24 fade-up" style="animation-delay: 0.5s;">
+        <!-- Recent Transactions -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Recent Transactions</div>
+            <a href="expenses.html" class="section-action">View all</a>
+          </div>
+          <div class="card-body" style="padding-top:8px;">
+            <div id="recentTxns"></div>
+          </div>
+        </div>
+
+        <!-- Budget Summary -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Budget Health</div>
+            <a href="budgets.html" class="section-action">Manage</a>
+          </div>
+          <div class="card-body" style="padding-top:8px;">
+            <div id="budgetSummary"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Add Transaction Modal -->
+<div class="modal-overlay" id="txnModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="modalTitle">Add Transaction</div>
+        <div class="modal-subtitle">Record your income or expense</div>
+      </div>
+      <button class="modal-close" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <div style="margin-bottom:20px;">
+        <div class="type-selector">
+          <button class="type-btn" id="incomeBtn" onclick="setType('income')">
+            <i class="fa-solid fa-arrow-trend-up"></i> Income
+          </button>
+          <button class="type-btn" id="expenseBtn" onclick="setType('expense')">
+            <i class="fa-solid fa-arrow-trend-down"></i> Expense
+          </button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Amount (Rs.)</label>
+        <div class="input-with-prefix">
+          <span class="input-prefix">Rs.</span>
+          <input type="number" id="txnAmount" class="form-control" placeholder="0.00" min="0" step="0.01">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <div class="input-with-icon">
+            <i class="fa-solid fa-tag input-icon"></i>
+            <select id="txnCategory" class="form-control"></select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date</label>
+          <div class="input-with-icon">
+            <i class="fa-regular fa-calendar input-icon"></i>
+            <input type="date" id="txnDate" class="form-control">
+          </div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <div class="input-with-icon">
+          <i class="fa-solid fa-pen input-icon"></i>
+          <input type="text" id="txnDesc" class="form-control" placeholder="What was this for?">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="saveTxnBtn" onclick="saveTransaction()">
+        <i class="fa-solid fa-floppy-disk"></i> Save
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+  const user = FinTran.requireAuth();
+  if (user) {
+    // Init
+    if (user.avatar) document.getElementById('userAvatar').textContent = user.avatar || user.name?.charAt(0) || 'U';
+    const now = new Date();
+    document.getElementById('currentMonth').textContent = FinTran.getMonthName(now.getMonth(), now.getFullYear());
+
+    renderStats();
+    renderCharts();
+    renderRecentTxns();
+    renderBudgetSummary();
+  }
+
+  // ─── Stats ───────────────────────────────────────────────────────
+  function renderStats() {
+    const now = new Date();
+    const curr = FinTran.getMonthStats(now.getFullYear(), now.getMonth());
+    const prev = FinTran.getMonthStats(now.getFullYear(), now.getMonth() - 1);
+
+    const savingsRate = curr.income > 0 ? ((curr.income - curr.expenses) / curr.income * 100).toFixed(0) : 0;
+
+    const incDiff = prev.income   > 0 ? ((curr.income   - prev.income)   / prev.income   * 100).toFixed(0) : 0;
+    const exDiff  = prev.expenses > 0 ? ((curr.expenses - prev.expenses) / prev.expenses * 100).toFixed(0) : 0;
+
+    document.getElementById('statsGrid').innerHTML = `
+      <div class="stat-card green fade-up" style="animation-delay: 0.05s;">
+        <div class="stat-icon green"><i class="fa-solid fa-arrow-trend-up"></i></div>
+        <div class="stat-label">Total Income</div>
+        <div class="stat-value">${FinTran.formatCurrency(curr.income)}</div>
+        <div class="stat-change ${Number(incDiff) >= 0 ? 'pos' : 'neg'}">
+          <i class="fa-solid fa-caret-${Number(incDiff) >= 0 ? 'up' : 'down'}"></i>
+          ${Math.abs(incDiff)}% vs last month
+        </div>
+      </div>
+      <div class="stat-card red fade-up" style="animation-delay: 0.15s;">
+        <div class="stat-icon red"><i class="fa-solid fa-arrow-trend-down"></i></div>
+        <div class="stat-label">Total Expenses</div>
+        <div class="stat-value">${FinTran.formatCurrency(curr.expenses)}</div>
+        <div class="stat-change ${Number(exDiff) <= 0 ? 'pos' : 'neg'}">
+          <i class="fa-solid fa-caret-${Number(exDiff) <= 0 ? 'down' : 'up'}"></i>
+          ${Math.abs(exDiff)}% vs last month
+        </div>
+      </div>
+      <div class="stat-card accent fade-up" style="animation-delay: 0.25s;">
+        <div class="stat-icon accent"><i class="fa-solid fa-wallet"></i></div>
+        <div class="stat-label">Net Balance</div>
+        <div class="stat-value ${curr.balance >= 0 ? 'text-green' : 'text-red'}">${FinTran.formatCurrency(Math.abs(curr.balance))}</div>
+        <div class="stat-change ${curr.balance >= 0 ? 'pos' : 'neg'}">
+          ${curr.balance >= 0 ? '✓ Surplus' : '⚠ Deficit'} this month
+        </div>
+      </div>
+      <div class="stat-card amber fade-up" style="animation-delay: 0.35s;">
+        <div class="stat-icon amber"><i class="fa-solid fa-piggy-bank"></i></div>
+        <div class="stat-label">Savings Rate</div>
+        <div class="stat-value">${savingsRate}%</div>
+        <div class="stat-change ${Number(savingsRate) >= 20 ? 'pos' : 'neg'}">
+          ${Number(savingsRate) >= 20 ? 'Great savings!' : 'Try to save more'}
+        </div>
+      </div>
+    `;
+  }
+
+  // ─── Charts ───────────────────────────────────────────────────────
+  function renderCharts() {
+    const data6m  = FinTran.getLast6MonthsData();
+    const isDark  = document.documentElement.getAttribute('data-theme') !== 'light';
+    const textColor = isDark ? '#94a3b8' : '#475569';
+    const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+
+    Chart.defaults.color = textColor;
+    Chart.defaults.borderColor = gridColor;
+    Chart.defaults.font.family = 'Inter';
+
+    // Bar Chart
+    new Chart(document.getElementById('barChart').getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: data6m.map(d => d.label),
+        datasets: [
+          {
+            label: 'Income',
+            data: data6m.map(d => d.income),
+            backgroundColor: 'rgba(34,197,94,0.7)',
+            borderColor: '#22c55e',
+            borderWidth: 1,
+            borderRadius: 6,
+          },
+          {
+            label: 'Expenses',
+            data: data6m.map(d => d.expenses),
+            backgroundColor: 'rgba(239,68,68,0.7)',
+            borderColor: '#ef4444',
+            borderWidth: 1,
+            borderRadius: 6,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'top', labels: { padding: 16, boxWidth: 12, borderRadius: 3 } } },
+        scales: {
+          x: { grid: { display: false } },
+          y: { grid: { color: gridColor }, ticks: { callback: v => 'Rs.' + (v/1000).toFixed(0) + 'K' } },
+        },
+      },
+    });
+
+    // Donut Chart
+    const now = new Date();
+    const breakdown = FinTran.getCategoryBreakdown('expense', now.getFullYear(), now.getMonth());
+    if (breakdown.length === 0) {
+      document.getElementById('donutChart').closest('.chart-wrap').innerHTML =
+        '<div class="empty-state"><div class="empty-icon"><i class="fa-solid fa-chart-pie"></i></div><p>No expenses this month</p></div>';
+      return;
+    }
+
+    new Chart(document.getElementById('donutChart').getContext('2d'), {
+      type: 'doughnut',
+      data: {
+        labels: breakdown.map(b => b.category.name),
+        datasets: [{
+          data: breakdown.map(b => b.total),
+          backgroundColor: breakdown.map(b => b.category.color + 'cc'),
+          borderColor: breakdown.map(b => b.category.color),
+          borderWidth: 2,
+          hoverOffset: 6,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '68%',
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: ctx => ' ' + FinTran.formatCurrency(ctx.parsed) } },
+        },
+      },
+    });
+
+    // Custom legend
+    const top4 = breakdown.slice(0, 4);
+    document.getElementById('donutLegend').innerHTML = top4.map(b => `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="width:10px;height:10px;background:${b.category.color};border-radius:3px;display:inline-block;"></span>
+          <span style="font-size:12px;color:var(--text-2);">${b.category.name}</span>
+        </div>
+        <span style="font-size:12px;font-weight:700;color:var(--text-1);">${FinTran.formatCurrency(b.total)}</span>
+      </div>
+    `).join('');
+  }
+
+  // ─── Recent Transactions ──────────────────────────────────────────
+  function renderRecentTxns() {
+    const txns = FinTran.getTransactions().slice(0, 8);
+    if (txns.length === 0) {
+      document.getElementById('recentTxns').innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon"><i class="fa-solid fa-receipt"></i></div>
+          <h3>No transactions yet</h3>
+          <p>Add your first income or expense to get started</p>
+        </div>`;
+      return;
+    }
+    document.getElementById('recentTxns').innerHTML = txns.map((t, i) => {
+      const cat = FinTran.getCategoryById(t.categoryId);
+      return `
+        <div class="txn-item fade-up" style="animation-delay: ${0.6 + i*0.05}s;">
+          <div style="${FinTran.catIconStyle(cat.color)}">
+            <i class="fa-solid ${cat.icon}"></i>
+          </div>
+          <div class="txn-info">
+            <div class="txn-desc">${t.description || cat.name}</div>
+            <div class="txn-meta">${cat.name} · ${FinTran.formatDate(t.date)}</div>
+          </div>
+          <div class="txn-amount ${t.type}">
+            ${t.type === 'income' ? '+' : '-'}${FinTran.formatCurrency(t.amount)}
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // ─── Budget Summary ───────────────────────────────────────────────
+  function renderBudgetSummary() {
+    const now = new Date();
+    const progress = FinTran.getBudgetProgress(now.getFullYear(), now.getMonth());
+    if (progress.length === 0) {
+      document.getElementById('budgetSummary').innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon"><i class="fa-solid fa-sliders"></i></div>
+          <h3>No budgets set</h3>
+          <p>Set monthly budgets to track your spending</p>
+          <a href="budgets.html" class="btn btn-primary btn-sm" style="margin-top:8px;">Set Budgets</a>
+        </div>`;
+      return;
+    }
+    document.getElementById('budgetSummary').innerHTML = progress.map((b, i) => {
+      const color = b.pct >= 100 ? '#ef4444' : b.pct >= 80 ? '#f59e0b' : '#22c55e';
+      return `
+        <div class="budget-row fade-up" style="animation-delay: ${0.6 + i*0.05}s;">
+          <div style="${FinTran.catIconStyle(b.category.color,'32px')}">
+            <i class="fa-solid ${b.category.icon}"></i>
+          </div>
+          <div class="budget-details">
+            <div class="budget-label">
+              <span class="budget-name">${b.category.name}</span>
+              <span class="budget-vals ${b.overBudget ? 'budget-over' : ''}">
+                <span>${FinTran.formatCurrency(b.spent)}</span> / ${FinTran.formatCurrency(b.amount)}
+              </span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" style="width:${b.pct}%;background:${color};"></div>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // ─── Modal Logic ──────────────────────────────────────────────────
+  let currentType = 'expense';
+
+  function openModal(type) {
+    currentType = type || 'expense';
+    setType(currentType);
+    document.getElementById('txnDate').value = new Date().toISOString().split('T')[0];
+    document.getElementById('txnAmount').value = '';
+    document.getElementById('txnDesc').value = '';
+    document.getElementById('txnModal').classList.add('open');
+    document.getElementById('txnAmount').focus();
+  }
+
+  function closeModal() {
+    document.getElementById('txnModal').classList.remove('open');
+  }
+
+  function setType(type) {
+    currentType = type;
+    const ibtn = document.getElementById('incomeBtn');
+    const ebtn = document.getElementById('expenseBtn');
+    ibtn.className = 'type-btn' + (type === 'income'  ? ' active-income'  : '');
+    ebtn.className = 'type-btn' + (type === 'expense' ? ' active-expense' : '');
+    document.getElementById('modalTitle').textContent = type === 'income' ? 'Add Income' : 'Add Expense';
+    document.getElementById('saveTxnBtn').className   = 'btn ' + (type === 'income' ? 'btn-success' : 'btn-danger');
+
+    const cats = FinTran.getCategories().filter(c => c.type === type);
+    document.getElementById('txnCategory').innerHTML = cats.map(c =>
+      `<option value="${c.id}">${c.name}</option>`
+    ).join('');
+  }
+
+  function saveTransaction() {
+    const amount = parseFloat(document.getElementById('txnAmount').value);
+    const cat    = document.getElementById('txnCategory').value;
+    const date   = document.getElementById('txnDate').value;
+    const desc   = document.getElementById('txnDesc').value.trim();
+
+    if (!amount || amount <= 0) { FinTran.toast('Please enter a valid amount', 'error'); return; }
+    if (!date) { FinTran.toast('Please select a date', 'error'); return; }
+
+    FinTran.addTransaction({ type: currentType, amount, categoryId: cat, date, description: desc });
+    closeModal();
+    FinTran.toast(currentType === 'income' ? '✅ Income added!' : '✅ Expense recorded!', 'success');
+    renderStats();
+    renderRecentTxns();
+    renderBudgetSummary();
+  }
+
+  // Close modal on overlay click
+  document.getElementById('txnModal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+</script>
+</body>
+</html>

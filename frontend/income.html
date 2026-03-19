@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Income – FinTran</title>
+  <meta name="description" content="Track all your income sources in FinTran.">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%236366f1%22/><text y=%22.9em%22 font-size=%2272%22 x=%2250%25%22 dominant-baseline=%22auto%22 text-anchor=%22middle%22>%F0%9F%92%B0</text></svg>">
+  <script>(function(){const t=localStorage.getItem('ft_theme');if(t)document.documentElement.setAttribute('data-theme',t);})();</script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .cat-picker{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:8px;}
+    .cat-pick-btn{display:flex;flex-direction:column;align-items:center;gap:5px;padding:10px 6px;border-radius:var(--radius-sm);border:2px solid transparent;background:var(--surface);cursor:pointer;transition:all .2s;font-family:var(--font);}
+    .cat-pick-btn .cp-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff;}
+    .cat-pick-btn .cp-lbl{font-size:10px;font-weight:600;color:var(--text-2);text-align:center;line-height:1.2;}
+    .cat-pick-btn:hover{border-color:var(--border-2);background:var(--surface-2);}
+    .cat-pick-btn.selected{border-color:var(--accent);background:rgba(99,102,241,.12);}
+    .cat-pick-btn.selected .cp-lbl{color:var(--accent-light);}
+  </style>
+</head>
+<body>
+<div class="app-shell">
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon"><i class="fa-solid fa-wallet"></i></div>
+      <span class="logo-text">Fin<span>Tran</span></span>
+    </div>
+    <div class="sidebar-user" onclick="location.href='profile.html'" style="cursor:pointer;" title="View Profile">
+      <div class="user-avatar" id="userAvatar">A</div>
+      <div class="user-info">
+        <div class="user-name" id="userName">Loading...</div>
+        <div class="user-role">Personal Finance</div>
+      </div>
+    </div>
+    <div class="nav-section-label">Main</div>
+    <ul class="nav-links">
+      <li><a href="index.html"><div class="nav-icon"><i class="fa-solid fa-grid-2"></i></div>Dashboard</a></li>
+      <li class="active"><a href="income.html"><div class="nav-icon"><i class="fa-solid fa-arrow-trend-up"></i></div>Income</a></li>
+      <li><a href="expenses.html"><div class="nav-icon"><i class="fa-solid fa-arrow-trend-down"></i></div>Expenses</a></li>
+      <li><a href="budgets.html"><div class="nav-icon"><i class="fa-solid fa-sliders"></i></div>Budgets</a></li>
+      <li><a href="reports.html"><div class="nav-icon"><i class="fa-solid fa-chart-pie"></i></div>Reports</a></li>
+      <li><a href="savings.html"><div class="nav-icon"><i class="fa-solid fa-piggy-bank"></i></div>Savings</a></li>
+      <li><a href="wallet.html"><div class="nav-icon"><i class="fa-solid fa-wallet"></i></div>Wallet</a></li>
+    </ul>
+    <div class="nav-section-label" style="margin-top:8px;">Account</div>
+    <ul class="nav-links">
+      <li><a href="profile.html"><div class="nav-icon"><i class="fa-solid fa-user"></i></div>Profile</a></li>
+      <li><a href="settings.html"><div class="nav-icon"><i class="fa-solid fa-gear"></i></div>Settings</a></li>
+      <li><a href="#" onclick="FinTran.logout()"><div class="nav-icon"><i class="fa-solid fa-arrow-right-from-bracket"></i></div>Logout</a></li>
+    </ul>
+    <div class="sidebar-footer">
+      <button class="btn-icon" onclick="FinTran.toggleTheme();location.reload();" title="Toggle theme"><i class="fa-solid fa-sun"></i></button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main-content">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="btn-icon" id="menuToggle"><i class="fa-solid fa-bars"></i></button>
+        <div>
+          <div class="page-title">Income</div>
+          <div class="page-subtitle">Track your earnings</div>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <button class="btn btn-success" onclick="openAddModal()">
+          <i class="fa-solid fa-plus"></i> Add Income
+        </button>
+      </div>
+    </header>
+
+    <div class="page-content">
+
+      <!-- Stats -->
+      <div class="stats-grid mb-24" id="incomeStats"></div>
+
+      <!-- Chart + list row -->
+      <div class="charts-grid mb-24">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Monthly Income Trend</div>
+          </div>
+          <div class="card-body">
+            <div class="chart-wrap"><canvas id="incomeChart"></canvas></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">By Category</div>
+          </div>
+          <div class="card-body">
+            <div class="chart-wrap" style="min-height:200px;"><canvas id="catChart"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Income List -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">All Income Records</div>
+          <div class="filters-bar" style="gap:8px;">
+            <select id="monthFilter" class="form-control" style="width:auto;padding:6px 12px;font-size:12px;" onchange="renderList()">
+            </select>
+            <select id="catFilter" class="form-control" style="width:auto;padding:6px 12px;font-size:12px;" onchange="renderList()">
+              <option value="">All Categories</option>
+            </select>
+          </div>
+        </div>
+        <div class="card-body" style="padding:0;">
+          <table class="data-table" id="incomeTable">
+            <thead>
+              <tr>
+                <th>Description</th>
+                <th>Category</th>
+                <th>Date</th>
+                <th class="text-right">Amount</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="incomeTableBody"></tbody>
+          </table>
+          <div id="incomeEmpty" style="display:none;"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Add Income Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="modalTitle">Add Income</div>
+        <div class="modal-subtitle">Record a new income entry</div>
+      </div>
+      <button class="modal-close" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editId">
+      <div class="form-group">
+        <label class="form-label">Amount (Rs.)</label>
+        <div class="input-with-prefix">
+          <span class="input-prefix">Rs.</span>
+          <input type="number" id="amount" class="form-control" placeholder="0.00" min="0" step="0.01">
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:8px;">
+        <label class="form-label">Category</label>
+        <input type="hidden" id="category" value="salary">
+        <div class="cat-picker" id="catPicker"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Date</label>
+        <div class="input-with-icon">
+          <i class="fa-regular fa-calendar input-icon"></i>
+          <input type="date" id="date" class="form-control">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <div class="input-with-icon">
+          <i class="fa-solid fa-pen input-icon"></i>
+          <input type="text" id="description" class="form-control" placeholder="e.g. Monthly Salary, Freelance Project">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notes (optional)</label>
+        <textarea id="notes" class="form-control" rows="2" placeholder="Any additional notes..." style="resize:vertical;"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-success" onclick="save()">
+        <i class="fa-solid fa-floppy-disk"></i> <span id="saveBtnText">Save Income</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirm Modal -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal" style="max-width:380px;">
+    <div class="modal-header">
+      <div class="modal-title">Delete Income</div>
+      <button class="modal-close" onclick="document.getElementById('deleteModal').classList.remove('open')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body" style="text-align:center;padding:28px;">
+      <div style="width:60px;height:60px;background:var(--red-bg);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:24px;color:var(--red);">
+        <i class="fa-solid fa-trash"></i>
+      </div>
+      <div style="font-size:15px;font-weight:600;color:var(--text-1);margin-bottom:8px;">Are you sure?</div>
+      <p style="font-size:13px;color:var(--text-3);">This income record will be permanently deleted.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="document.getElementById('deleteModal').classList.remove('open')">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmDelete()">
+        <i class="fa-solid fa-trash"></i> Delete
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+  const user = FinTran.requireAuth();
+  if (user) {
+    document.getElementById('userAvatar').textContent = user.avatar || user.name?.charAt(0) || 'U';
+
+    initFilters();
+    renderStats();
+    renderCharts();
+    renderList();
+  }
+
+  let deleteTargetId = null;
+
+  // ─── Filters ─────────────────────────────────────────────────────
+  function initFilters() {
+    const now = new Date();
+    const monthSel = document.getElementById('monthFilter');
+    for (let i = 0; i < 6; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const val = `${d.getFullYear()}-${d.getMonth()}`;
+      const opt = document.createElement('option');
+      opt.value = val;
+      opt.textContent = FinTran.getMonthName(d.getMonth(), d.getFullYear());
+      monthSel.appendChild(opt);
+    }
+
+    const catSel = document.getElementById('catFilter');
+    FinTran.getCategories().filter(c => c.type === 'income').forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.id;
+      opt.textContent = c.name;
+      catSel.appendChild(opt);
+    });
+
+    // Visual category picker in modal
+    const picker = document.getElementById('catPicker');
+    FinTran.getCategories().filter(c => c.type === 'income').forEach(c => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'cat-pick-btn' + (c.id === 'salary' ? ' selected' : '');
+      btn.dataset.catId = c.id;
+      btn.innerHTML = `<div class="cp-icon" style="background:${c.color};"><i class="fa-solid ${c.icon}"></i></div><div class="cp-lbl">${c.name}</div>`;
+      btn.onclick = () => selectCat(c.id);
+      picker.appendChild(btn);
+    });
+  }
+
+  function selectCat(id) {
+    document.getElementById('category').value = id;
+    document.querySelectorAll('.cat-pick-btn').forEach(b => b.classList.toggle('selected', b.dataset.catId === id));
+  }
+
+  function getSelectedMonth() {
+    const v = document.getElementById('monthFilter').value.split('-');
+    return { year: parseInt(v[0]), month: parseInt(v[1]) };
+  }
+
+  // ─── Stats ───────────────────────────────────────────────────────
+  function renderStats() {
+    const { year, month } = getSelectedMonth();
+    const stat = FinTran.getMonthStats(year, month);
+    const incomeTxns = stat.transactions.filter(t => t.type === 'income');
+    const maxSingle  = incomeTxns.length ? Math.max(...incomeTxns.map(t => t.amount)) : 0;
+
+    document.getElementById('incomeStats').innerHTML = `
+      <div class="stat-card green">
+        <div class="stat-icon green"><i class="fa-solid fa-coins"></i></div>
+        <div class="stat-label">Total Income</div>
+        <div class="stat-value">${FinTran.formatCurrency(stat.income)}</div>
+        <div class="stat-change pos">${incomeTxns.length} entries</div>
+      </div>
+      <div class="stat-card accent">
+        <div class="stat-icon accent"><i class="fa-solid fa-calculator"></i></div>
+        <div class="stat-label">Average Entry</div>
+        <div class="stat-value">${FinTran.formatCurrency(incomeTxns.length ? stat.income / incomeTxns.length : 0)}</div>
+        <div class="stat-change pos">per transaction</div>
+      </div>
+      <div class="stat-card amber">
+        <div class="stat-icon amber"><i class="fa-solid fa-star"></i></div>
+        <div class="stat-label">Largest Income</div>
+        <div class="stat-value">${FinTran.formatCurrency(maxSingle)}</div>
+        <div class="stat-change pos">single entry</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-icon red"><i class="fa-solid fa-chart-line"></i></div>
+        <div class="stat-label">Remaining After Expenses</div>
+        <div class="stat-value ${stat.balance >= 0 ? 'text-green' : 'text-red'}">${FinTran.formatCurrency(Math.abs(stat.balance))}</div>
+        <div class="stat-change ${stat.balance >= 0 ? 'pos' : 'neg'}">${stat.balance >= 0 ? 'Surplus' : 'Deficit'}</div>
+      </div>
+    `;
+  }
+
+  // ─── Charts ───────────────────────────────────────────────────────
+  function renderCharts() {
+    const data6m = FinTran.getLast6MonthsData();
+    const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+    const textColor = isDark ? '#94a3b8' : '#475569';
+
+    Chart.defaults.color = textColor;
+    Chart.defaults.font.family = 'Inter';
+
+    new Chart(document.getElementById('incomeChart').getContext('2d'), {
+      type: 'line',
+      data: {
+        labels: data6m.map(d => d.label),
+        datasets: [{
+          label: 'Income',
+          data: data6m.map(d => d.income),
+          borderColor: '#22c55e',
+          backgroundColor: 'rgba(34,197,94,0.12)',
+          fill: true,
+          tension: 0.45,
+          pointBackgroundColor: '#22c55e',
+          pointRadius: 5,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false } },
+          y: { grid: { color: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' },
+               ticks: { callback: v => 'Rs.' + (v/1000).toFixed(0) + 'K' } },
+        },
+      },
+    });
+
+    const now = new Date();
+    const cats = FinTran.getCategoryBreakdown('income', now.getFullYear(), now.getMonth());
+    if (cats.length > 0) {
+      new Chart(document.getElementById('catChart').getContext('2d'), {
+        type: 'doughnut',
+        data: {
+          labels: cats.map(c => c.category.name),
+          datasets: [{
+            data: cats.map(c => c.total),
+            backgroundColor: cats.map(c => c.category.color + 'bb'),
+            borderColor:     cats.map(c => c.category.color),
+            borderWidth: 2,
+            hoverOffset: 6,
+          }],
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false, cutout: '60%',
+          plugins: { legend: { position: 'bottom', labels: { padding: 12, boxWidth: 12 } } },
+        },
+      });
+    }
+  }
+
+  // ─── List ─────────────────────────────────────────────────────────
+  function renderList() {
+    const { year, month } = getSelectedMonth();
+    const catFilter = document.getElementById('catFilter').value;
+    let txns = FinTran.getTransactions().filter(t => {
+      const d = new Date(t.date);
+      return t.type === 'income' &&
+        d.getFullYear() === year && d.getMonth() === month &&
+        (!catFilter || t.categoryId === catFilter);
+    });
+
+    const tbody = document.getElementById('incomeTableBody');
+    const empty = document.getElementById('incomeEmpty');
+
+    if (txns.length === 0) {
+      tbody.innerHTML = '';
+      document.getElementById('incomeTable').style.display = 'none';
+      empty.style.display = 'block';
+      empty.innerHTML = `<div class="empty-state">
+        <div class="empty-icon"><i class="fa-solid fa-arrow-trend-up"></i></div>
+        <h3>No income found</h3><p>Add your first income entry for this month</p>
+        <button class="btn btn-success btn-sm" style="margin-top:8px;" onclick="openAddModal()">+ Add Income</button>
+      </div>`;
+      return;
+    }
+
+    document.getElementById('incomeTable').style.display = '';
+    empty.style.display = 'none';
+
+    tbody.innerHTML = txns.map(t => {
+      const cat = FinTran.getCategoryById(t.categoryId);
+      return `
+        <tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div style="${FinTran.catIconStyle(cat.color)}">
+                <i class="fa-solid ${cat.icon}"></i>
+              </div>
+              <div>
+                <div style="font-weight:600;">${t.description || cat.name}</div>
+                ${t.notes ? `<div style="font-size:11px;color:var(--text-3);">${t.notes}</div>` : ''}
+              </div>
+            </div>
+          </td>
+          <td><span class="badge badge-income">${cat.name}</span></td>
+          <td style="color:var(--text-3);">${FinTran.formatDate(t.date)}</td>
+          <td class="text-right font-bold text-green">+${FinTran.formatCurrencyFull(t.amount)}</td>
+          <td>
+            <div style="display:flex;gap:6px;justify-content:flex-end;">
+              <button class="btn-icon" style="width:30px;height:30px;" onclick="openEditModal('${t.id}')" title="Edit">
+                <i class="fa-solid fa-pen" style="font-size:12px;"></i>
+              </button>
+              <button class="btn-icon" style="width:30px;height:30px;color:var(--red);" onclick="showDelete('${t.id}')" title="Delete">
+                <i class="fa-solid fa-trash" style="font-size:12px;"></i>
+              </button>
+            </div>
+          </td>
+        </tr>`;
+    }).join('');
+
+    renderStats();
+  }
+
+  // ─── Modal Logic ──────────────────────────────────────────────────
+  function openAddModal() {
+    document.getElementById('editId').value = '';
+    document.getElementById('amount').value = '';
+    document.getElementById('date').value   = new Date().toISOString().split('T')[0];
+    document.getElementById('description').value = '';
+    document.getElementById('notes').value  = '';
+    document.getElementById('modalTitle').textContent = 'Add Income';
+    document.getElementById('saveBtnText').textContent = 'Save Income';
+    selectCat('salary');
+    document.getElementById('modal').classList.add('open');
+    document.getElementById('amount').focus();
+  }
+
+  function openEditModal(id) {
+    const txn = FinTran.getTransactions().find(t => t.id === id);
+    if (!txn) return;
+    document.getElementById('editId').value = id;
+    document.getElementById('amount').value = txn.amount;
+    selectCat(txn.categoryId);
+    document.getElementById('date').value   = txn.date;
+    document.getElementById('description').value = txn.description || '';
+    document.getElementById('notes').value  = txn.notes || '';
+    document.getElementById('modalTitle').textContent = 'Edit Income';
+    document.getElementById('saveBtnText').textContent = 'Update';
+    document.getElementById('modal').classList.add('open');
+  }
+
+  function closeModal() { document.getElementById('modal').classList.remove('open'); }
+
+  function save() {
+    const amount = parseFloat(document.getElementById('amount').value);
+    const cat    = document.getElementById('category').value;
+    const date   = document.getElementById('date').value;
+    const desc   = document.getElementById('description').value.trim();
+    const notes  = document.getElementById('notes').value.trim();
+    const editId = document.getElementById('editId').value;
+
+    if (!amount || amount <= 0) { FinTran.toast('Enter a valid amount', 'error'); return; }
+    if (!date) { FinTran.toast('Select a date', 'error'); return; }
+
+    if (editId) {
+      FinTran.updateTransaction(editId, { amount, categoryId: cat, date, description: desc, notes });
+      FinTran.toast('Income updated ✅', 'success');
+    } else {
+      FinTran.addTransaction({ type: 'income', amount, categoryId: cat, date, description: desc, notes });
+      FinTran.toast('Income added ✅', 'success');
+    }
+
+    closeModal();
+    renderList();
+  }
+
+  function showDelete(id) {
+    deleteTargetId = id;
+    document.getElementById('deleteModal').classList.add('open');
+  }
+
+  function confirmDelete() {
+    if (!deleteTargetId) return;
+    FinTran.deleteTransaction(deleteTargetId);
+    deleteTargetId = null;
+    document.getElementById('deleteModal').classList.remove('open');
+    FinTran.toast('Income deleted', 'info');
+    renderList();
+  }
+
+  document.getElementById('modal').addEventListener('click', e => { if (e.target === document.getElementById('modal')) closeModal(); });
+</script>
+</body>
+</html>

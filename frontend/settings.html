@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings – FinTran</title>
+  <meta name="description" content="Customize your FinTran app settings, themes, and preferences.">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%236366f1%22/><text y=%22.9em%22 font-size=%2272%22 x=%2250%25%22 dominant-baseline=%22auto%22 text-anchor=%22middle%22>%F0%9F%92%B0</text></svg>">
+  <script>(function(){const t=localStorage.getItem('ft_theme');if(t)document.documentElement.setAttribute('data-theme',t);})();</script>
+  <style>
+    .settings-grid {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    /* Settings nav */
+    .settings-nav {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      position: sticky;
+      top: 80px;
+    }
+
+    .settings-nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 18px;
+      cursor: pointer;
+      font-size: 13.5px;
+      font-weight: 500;
+      color: var(--text-2);
+      border-bottom: 1px solid var(--border);
+      transition: var(--transition);
+    }
+    .settings-nav-item:last-child { border-bottom: none; }
+    .settings-nav-item:hover { background: var(--surface-2); color: var(--text-1); }
+    .settings-nav-item.active { background: linear-gradient(135deg,rgba(99,102,241,0.15),rgba(139,92,246,0.1)); color: var(--accent-light); border-right: 3px solid var(--accent); }
+    .settings-nav-item .nav-ico { width: 32px; height: 32px; border-radius: var(--radius-xs); display: flex; align-items: center; justify-content: center; font-size: 14px; background: var(--surface-2); flex-shrink: 0; }
+    .settings-nav-item.active .nav-ico { background: var(--accent); color: white; }
+
+    /* Settings section */
+    .settings-section { display: none; }
+    .settings-section.active { display: flex; flex-direction: column; gap: 20px; }
+
+    /* Setting row */
+    .setting-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 16px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .setting-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .setting-info { flex: 1; }
+    .setting-title { font-size: 14px; font-weight: 600; color: var(--text-1); }
+    .setting-desc  { font-size: 12px; color: var(--text-3); margin-top: 3px; }
+
+    /* Toggle switch */
+    .toggle {
+      position: relative;
+      display: inline-block;
+      width: 44px; height: 24px;
+    }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-track {
+      position: absolute;
+      inset: 0;
+      background: var(--surface-2);
+      border: 1px solid var(--border-2);
+      border-radius: 99px;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .toggle-thumb {
+      position: absolute;
+      height: 18px; width: 18px;
+      left: 3px; bottom: 3px;
+      background: var(--text-3);
+      border-radius: 50%;
+      transition: var(--transition);
+    }
+    .toggle input:checked + .toggle-track { background: var(--accent); border-color: var(--accent); }
+    .toggle input:checked + .toggle-track + .toggle-thumb,
+    .toggle input:checked ~ .toggle-thumb { transform: translateX(20px); background: white; }
+    .toggle input:checked ~ .toggle-track { background: var(--accent); }
+
+    /* Theme cards */
+    .theme-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .theme-card {
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      border: 2px solid var(--border);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .theme-card:hover { transform: translateY(-2px); border-color: var(--border-2); }
+    .theme-card.active { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+    .theme-preview { height: 80px; position: relative; }
+    .theme-preview-sidebar { position: absolute; left: 0; top: 0; bottom: 0; width: 30%; }
+    .theme-preview-main    { position: absolute; right: 0; top: 0; bottom: 0; width: 70%; }
+    .theme-label { padding: 10px 12px; display: flex; align-items: center; justify-content: space-between; background: var(--surface); font-size: 13px; font-weight: 600; }
+
+    /* Accent colors */
+    .accent-grid { display: flex; gap: 10px; flex-wrap: wrap; }
+    .accent-swatch {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 3px solid transparent;
+      transition: var(--transition);
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-size: 14px;
+    }
+    .accent-swatch:hover, .accent-swatch.active {
+      transform: scale(1.15);
+      border-color: white;
+      box-shadow: 0 0 0 2px currentColor;
+    }
+
+    /* Category manager */
+    .cat-list-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .cat-list-item:last-child { border-bottom: none; }
+
+    @media (max-width: 900px) {
+      .settings-grid { grid-template-columns: 1fr; }
+      .settings-nav  { position: static; }
+    }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon"><i class="fa-solid fa-wallet"></i></div>
+      <span class="logo-text">Fin<span>Tran</span></span>
+    </div>
+    <div class="sidebar-user" onclick="location.href='profile.html'" style="cursor:pointer;" title="View Profile">
+      <div class="user-avatar" id="userAvatar">A</div>
+      <div class="user-info">
+        <div class="user-name" id="userName">Loading...</div>
+        <div class="user-role">Personal Finance</div>
+      </div>
+    </div>
+    <div class="nav-section-label">Main</div>
+    <ul class="nav-links">
+      <li><a href="index.html"><div class="nav-icon"><i class="fa-solid fa-grid-2"></i></div>Dashboard</a></li>
+      <li><a href="income.html"><div class="nav-icon"><i class="fa-solid fa-arrow-trend-up"></i></div>Income</a></li>
+      <li><a href="expenses.html"><div class="nav-icon"><i class="fa-solid fa-arrow-trend-down"></i></div>Expenses</a></li>
+      <li><a href="budgets.html"><div class="nav-icon"><i class="fa-solid fa-sliders"></i></div>Budgets</a></li>
+      <li><a href="reports.html"><div class="nav-icon"><i class="fa-solid fa-chart-pie"></i></div>Reports</a></li>
+      <li><a href="savings.html"><div class="nav-icon"><i class="fa-solid fa-piggy-bank"></i></div>Savings</a></li>
+      <li><a href="wallet.html"><div class="nav-icon"><i class="fa-solid fa-wallet"></i></div>Wallet</a></li>
+    </ul>
+    <div class="nav-section-label" style="margin-top:8px;">Account</div>
+    <ul class="nav-links">
+      <li><a href="profile.html"><div class="nav-icon"><i class="fa-solid fa-user"></i></div>Profile</a></li>
+      <li class="active"><a href="settings.html"><div class="nav-icon"><i class="fa-solid fa-gear"></i></div>Settings</a></li>
+      <li><a href="#" onclick="FinTran.logout()"><div class="nav-icon"><i class="fa-solid fa-arrow-right-from-bracket"></i></div>Logout</a></li>
+    </ul>
+    <div class="sidebar-footer">
+      <button class="btn-icon" onclick="FinTran.toggleTheme();location.reload();" title="Toggle theme"><i class="fa-solid fa-sun"></i></button>
+      <span class="text-sm text-muted" style="margin-left:6px;">Theme</span>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main-content">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="btn-icon" id="menuToggle"><i class="fa-solid fa-bars"></i></button>
+        <div>
+          <div class="page-title">Settings</div>
+          <div class="page-subtitle">Customize your FinTran experience</div>
+        </div>
+      </div>
+    </header>
+
+    <div class="page-content">
+      <div class="settings-grid">
+
+        <!-- Settings Navigation -->
+        <div class="settings-nav">
+          <div class="settings-nav-item active" onclick="showSection('appearance',this)">
+            <div class="nav-ico"><i class="fa-solid fa-palette"></i></div>
+            <div>
+              <div>Appearance</div>
+              <div style="font-size:11px;color:var(--text-3);">Theme, colors, display</div>
+            </div>
+          </div>
+          <div class="settings-nav-item" onclick="showSection('notifications',this)">
+            <div class="nav-ico"><i class="fa-solid fa-bell"></i></div>
+            <div>
+              <div>Notifications</div>
+              <div style="font-size:11px;color:var(--text-3);">Alerts and reminders</div>
+            </div>
+          </div>
+          <div class="settings-nav-item" onclick="showSection('currency',this)">
+            <div class="nav-ico"><i class="fa-solid fa-coins"></i></div>
+            <div>
+              <div>Currency & Region</div>
+              <div style="font-size:11px;color:var(--text-3);">Currency format, locale</div>
+            </div>
+          </div>
+          <div class="settings-nav-item" onclick="showSection('categories',this)">
+            <div class="nav-ico"><i class="fa-solid fa-tags"></i></div>
+            <div>
+              <div>Categories</div>
+              <div style="font-size:11px;color:var(--text-3);">Manage your categories</div>
+            </div>
+          </div>
+          <div class="settings-nav-item" onclick="showSection('data',this)">
+            <div class="nav-ico"><i class="fa-solid fa-database"></i></div>
+            <div>
+              <div>Data & Privacy</div>
+              <div style="font-size:11px;color:var(--text-3);">Export, backup, delete</div>
+            </div>
+          </div>
+          <div class="settings-nav-item" onclick="showSection('about',this)">
+            <div class="nav-ico"><i class="fa-solid fa-circle-info"></i></div>
+            <div>
+              <div>About FinTran</div>
+              <div style="font-size:11px;color:var(--text-3);">Version and info</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Settings Content -->
+        <div>
+
+          <!-- ─── APPEARANCE ─── -->
+          <div class="settings-section active" id="sec-appearance">
+            <div class="card">
+              <div class="card-header"><div class="card-title">🎨 Theme</div></div>
+              <div class="card-body">
+                <div class="theme-cards">
+                  <div class="theme-card" id="darkCard" onclick="setTheme('dark')">
+                    <div class="theme-preview">
+                      <div class="theme-preview-sidebar" style="background:#12122a;"></div>
+                      <div class="theme-preview-main" style="background:#0d0d1a;">
+                        <div style="margin:10px;height:12px;background:rgba(255,255,255,0.08);border-radius:4px;"></div>
+                        <div style="margin:10px;display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+                          <div style="height:30px;background:rgba(99,102,241,0.2);border-radius:6px;"></div>
+                          <div style="height:30px;background:rgba(34,197,94,0.2);border-radius:6px;"></div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="theme-label">
+                      <span>🌙 Dark Mode</span>
+                      <i class="fa-solid fa-check-circle" id="darkCheck" style="color:var(--accent);"></i>
+                    </div>
+                  </div>
+                  <div class="theme-card" id="lightCard" onclick="setTheme('light')">
+                    <div class="theme-preview">
+                      <div class="theme-preview-sidebar" style="background:#e8edf5;"></div>
+                      <div class="theme-preview-main" style="background:#f1f5f9;">
+                        <div style="margin:10px;height:12px;background:rgba(0,0,0,0.1);border-radius:4px;"></div>
+                        <div style="margin:10px;display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+                          <div style="height:30px;background:rgba(99,102,241,0.3);border-radius:6px;"></div>
+                          <div style="height:30px;background:rgba(34,197,94,0.3);border-radius:6px;"></div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="theme-label" style="background:var(--surface);">
+                      <span>☀️ Light Mode</span>
+                      <i class="fa-solid fa-check-circle" id="lightCheck" style="color:var(--accent);display:none;"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header"><div class="card-title">🎨 Accent Color</div></div>
+              <div class="card-body">
+                <div class="setting-desc" style="margin-bottom:14px;">Choose the primary color used throughout the app.</div>
+                <div class="accent-grid" id="accentGrid"></div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header"><div class="card-title">📐 Display</div></div>
+              <div class="card-body">
+                <div class="setting-row">
+                  <div class="setting-info">
+                    <div class="setting-title">Compact Mode</div>
+                    <div class="setting-desc">Reduce spacing and padding for more content on screen</div>
+                  </div>
+                  <label class="toggle">
+                    <input type="checkbox" id="compactMode" onchange="saveSetting('compactMode',this.checked)">
+                    <div class="toggle-track"></div>
+                    <div class="toggle-thumb"></div>
+                  </label>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-info">
+                    <div class="setting-title">Show Animations</div>
+                    <div class="setting-desc">Enable smooth transitions and micro-animations</div>
+                  </div>
+                  <label class="toggle">
+                    <input type="checkbox" id="showAnimations" checked onchange="saveSetting('showAnimations',this.checked)">
+                    <div class="toggle-track"></div>
+                    <div class="toggle-thumb"></div>
+                  </label>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-info">
+                    <div class="setting-title">Show Balance in Sidebar</div>
+                    <div class="setting-desc">Display your current month balance in the sidebar user area</div>
+                  </div>
+                  <label class="toggle">
+                    <input type="checkbox" id="showSidebarBalance" onchange="saveSetting('showSidebarBalance',this.checked)">
+                    <div class="toggle-track"></div>
+                    <div class="toggle-thumb"></div>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ─── NOTIFICATIONS ─── -->
+          <div class="settings-section" id="sec-notifications">
+            <div class="card">
+              <div class="card-header"><div class="card-title">🔔 Budget Alerts</div></div>
+              <div class="card-body">
+                <div class="setting-row">
+                  <div class="setting-info">
+                    <div class="setting-title">Budget Warning Alerts</div>
+                    <div class="setting-desc">Get notified when a category reaches 80% of its budget</div>
+                  </div>
+                  <label class="toggle">
+                    <input type="checkbox" id="budgetAlerts" checked onchange="saveSetting('budgetAlerts',this.checked)">
+                    <div class="toggle-track"></div>
+                    <div class="toggle-thumb"></div>
+                  </label>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-info">
+                    <div class="setting-title">Over-Budget Alerts</div>
+                    <div class="setting-desc">Alert when spending exceeds a budget category</div>
+                  </div>
+                  <label class="toggle">
+                    <input type="checkbox" id="overBudgetAlerts" checked onchange="saveSetting('overBudgetAlerts',this.checked)">
+                    <div class="toggle-track"></div>
+                    <div class="toggle-thumb"></div>
+                  </label>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-info">
+                    <div class="setting-title">Monthly Summary</div>
+                    <div class="setting-desc">Show monthly financial summary at end of month</div>
+                  </div>
+                  <label class="toggle">
+                    <input type="checkbox" id="monthlySummary" checked onchange="saveSetting('monthlySummary',this.checked)">
+                    <div class="toggle-track"></div>
+                    <div class="toggle-thumb"></div>
+                  </label>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-info">
+                    <div class="setting-title">Savings Goal Reminders</div>
+                    <div class="setting-desc">Remind you to check savings progress weekly</div>
+                  </div>
+                  <label class="toggle">
+                    <input type="checkbox" id="savingsReminders" onchange="saveSetting('savingsReminders',this.checked)">
+                    <div class="toggle-track"></div>
+                    <div class="toggle-thumb"></div>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ─── CURRENCY ─── -->
+          <div class="settings-section" id="sec-currency">
+            <div class="card">
+              <div class="card-header"><div class="card-title">💱 Currency & Format</div></div>
+              <div class="card-body">
+                <div class="form-group">
+                  <label class="form-label">Primary Currency</label>
+                  <div class="input-with-icon">
+                    <i class="fa-solid fa-globe input-icon"></i>
+                    <select id="currencySel" class="form-control" onchange="saveSetting('currency',this.value)">
+                      <option value="LKR">🇱🇰 Sri Lankan Rupee (LKR) – Rs.</option>
+                      <option value="USD">🇺🇸 US Dollar (USD) – $</option>
+                      <option value="EUR">🇪🇺 Euro (EUR) – €</option>
+                      <option value="GBP">🇬🇧 British Pound (GBP) – £</option>
+                      <option value="INR">🇮🇳 Indian Rupee (INR) – ₹</option>
+                      <option value="AUD">🇦🇺 Australian Dollar (AUD) – A$</option>
+                      <option value="JPY">🇯🇵 Japanese Yen (JPY) – ¥</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-info">
+                    <div class="setting-title">Use Thousands Separator</div>
+                    <div class="setting-desc">Show numbers like Rs. 1,000 instead of Rs. 1000</div>
+                  </div>
+                  <label class="toggle">
+                    <input type="checkbox" id="thousandsSep" checked onchange="saveSetting('thousandsSep',this.checked)">
+                    <div class="toggle-track"></div>
+                    <div class="toggle-thumb"></div>
+                  </label>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-info">
+                    <div class="setting-title">Show Cents / Decimals</div>
+                    <div class="setting-desc">Display decimal places (e.g. Rs. 1,234.50)</div>
+                  </div>
+                  <label class="toggle">
+                    <input type="checkbox" id="showDecimals" checked onchange="saveSetting('showDecimals',this.checked)">
+                    <div class="toggle-track"></div>
+                    <div class="toggle-thumb"></div>
+                  </label>
+                </div>
+                <div class="form-group" style="margin-top:16px;">
+                  <label class="form-label">Date Format</label>
+                  <select id="dateFormat" class="form-control" onchange="saveSetting('dateFormat',this.value)">
+                    <option value="DD/MM/YYYY">DD/MM/YYYY (11/03/2026)</option>
+                    <option value="MM/DD/YYYY">MM/DD/YYYY (03/11/2026)</option>
+                    <option value="YYYY-MM-DD">YYYY-MM-DD (2026-03-11)</option>
+                    <option value="D MMM YYYY">D MMM YYYY (11 Mar 2026)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ─── CATEGORIES ─── -->
+          <div class="settings-section" id="sec-categories">
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">📁 Income Categories</div>
+              </div>
+              <div class="card-body" id="incomeCatList"></div>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">📁 Expense Categories</div>
+              </div>
+              <div class="card-body" id="expenseCatList"></div>
+            </div>
+          </div>
+
+          <!-- ─── DATA ─── -->
+          <div class="settings-section" id="sec-data">
+            <div class="card">
+              <div class="card-header"><div class="card-title">📤 Export Data</div></div>
+              <div class="card-body" style="display:flex;flex-direction:column;gap:14px;">
+                <div class="setting-row">
+                  <div class="setting-info">
+                    <div class="setting-title">Export as JSON</div>
+                    <div class="setting-desc">Download all transactions and budgets as a JSON file</div>
+                  </div>
+                  <button class="btn btn-ghost btn-sm" onclick="exportJSON()">
+                    <i class="fa-solid fa-download"></i> Export JSON
+                  </button>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-info">
+                    <div class="setting-title">Export as CSV</div>
+                    <div class="setting-desc">Download transactions in CSV format for Excel/Sheets</div>
+                  </div>
+                  <button class="btn btn-ghost btn-sm" onclick="exportCSV()">
+                    <i class="fa-solid fa-file-csv"></i> Export CSV
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header"><div class="card-title">📋 Data Summary</div></div>
+              <div class="card-body" id="dataSummary"></div>
+            </div>
+            <div class="card" style="border-color:rgba(239,68,68,0.3);">
+              <div class="card-header"><div class="card-title" style="color:var(--red);"><i class="fa-solid fa-triangle-exclamation" style="margin-right:8px;"></i>Danger Zone</div></div>
+              <div class="card-body" style="display:flex;flex-direction:column;gap:14px;">
+                <div class="setting-row">
+                  <div class="setting-info">
+                    <div class="setting-title">Clear All Transactions</div>
+                    <div class="setting-desc">Permanently delete all transaction records</div>
+                  </div>
+                  <button class="btn btn-ghost btn-sm" style="border-color:var(--red);color:var(--red);" onclick="clearTxns()">
+                    <i class="fa-solid fa-trash"></i> Clear
+                  </button>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-info">
+                    <div class="setting-title">Reset All Budgets</div>
+                    <div class="setting-desc">Remove all budget limits you have set</div>
+                  </div>
+                  <button class="btn btn-ghost btn-sm" style="border-color:var(--red);color:var(--red);" onclick="clearBudgets()">
+                    <i class="fa-solid fa-rotate-left"></i> Reset
+                  </button>
+                </div>
+                <div class="setting-row">
+                  <div class="setting-info">
+                    <div class="setting-title">Delete Account</div>
+                    <div class="setting-desc">Permanently delete your account and all data</div>
+                  </div>
+                  <button class="btn btn-danger btn-sm" onclick="deleteAccount()">
+                    <i class="fa-solid fa-user-slash"></i> Delete Account
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ─── ABOUT ─── -->
+          <div class="settings-section" id="sec-about">
+            <div class="card">
+              <div class="card-body" style="text-align:center;padding:40px 20px;">
+                <div style="width:80px;height:80px;background:linear-gradient(135deg,var(--accent),#8b5cf6);border-radius:20px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:36px;box-shadow:0 8px 30px var(--accent-glow);">
+                  <i class="fa-solid fa-wallet" style="color:white;"></i>
+                </div>
+                <h2 style="font-size:24px;font-weight:800;color:var(--text-1);">Fin<span style="color:var(--accent);">Tran</span></h2>
+                <p style="color:var(--text-3);font-size:14px;margin-top:6px;">Personal Budget & Finance Manager</p>
+                <div style="margin:24px 0;padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);">
+                  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;text-align:center;">
+                    <div>
+                      <div style="font-size:20px;font-weight:800;color:var(--accent);">v1.0</div>
+                      <div style="font-size:11px;color:var(--text-3);">Version</div>
+                    </div>
+                    <div>
+                      <div style="font-size:20px;font-weight:800;color:var(--green);">100%</div>
+                      <div style="font-size:11px;color:var(--text-3);">Offline</div>
+                    </div>
+                    <div>
+                      <div style="font-size:20px;font-weight:800;color:var(--amber);">Free</div>
+                      <div style="font-size:11px;color:var(--text-3);">Forever</div>
+                    </div>
+                  </div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:10px;max-width:300px;margin:0 auto;text-align:left;">
+                  <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text-2);">
+                    <i class="fa-solid fa-shield-halved" style="color:var(--green);width:18px;"></i>
+                    100% Private – Data stays on your device
+                  </div>
+                  <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text-2);">
+                    <i class="fa-solid fa-wifi-slash" style="color:var(--accent-light);width:18px;"></i>
+                    Works fully offline – No internet needed
+                  </div>
+                  <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text-2);">
+                    <i class="fa-solid fa-moon" style="color:var(--amber);width:18px;"></i>
+                    Dark & Light theme support
+                  </div>
+                  <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text-2);">
+                    <i class="fa-solid fa-mobile-screen" style="color:var(--cyan);width:18px;"></i>
+                    Responsive – Works on all screen sizes
+                  </div>
+                </div>
+                <div style="margin-top:24px;font-size:12px;color:var(--text-3);">
+                  Built with ❤️ using HTML, CSS & JavaScript
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+  const user = FinTran.requireAuth();
+  if (user) {
+    document.getElementById('userAvatar').textContent = user.avatar || user.name?.charAt(0) || 'U';
+    loadSettings();
+    renderCategories();
+    renderDataSummary();
+    renderAccentColors();
+    updateThemeCards();
+  }
+
+  // ─── Section Navigation ────────────────────────────────────────
+  function showSection(id, el) {
+    document.querySelectorAll('.settings-nav-item').forEach(i => i.classList.remove('active'));
+    document.querySelectorAll('.settings-section').forEach(s => s.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('sec-' + id).classList.add('active');
+  }
+
+  // ─── Save/Load Settings ───────────────────────────────────────
+  function getSettings() { return JSON.parse(localStorage.getItem('ft_settings') || '{}'); }
+
+  function saveSetting(key, value) {
+    const s = getSettings();
+    s[key] = value;
+    localStorage.setItem('ft_settings', JSON.stringify(s));
+    FinTran.toast('Setting saved', 'success');
+  }
+
+  function loadSettings() {
+    const s = getSettings();
+    const toggles = ['compactMode','showAnimations','showSidebarBalance','budgetAlerts','overBudgetAlerts','monthlySummary','savingsReminders','thousandsSep','showDecimals'];
+    toggles.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.checked = s[id] !== undefined ? s[id] : el.checked; // keep default if not set
+    });
+    if (s.currency) document.getElementById('currencySel').value = s.currency;
+    if (s.dateFormat) document.getElementById('dateFormat').value = s.dateFormat;
+  }
+
+  // ─── Theme ───────────────────────────────────────────────────
+  function setTheme(theme) {
+    FinTran.toggleTheme();
+    // Force set correct theme
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('ft_theme', theme);
+    updateThemeCards();
+    FinTran.toast('Theme changed to ' + theme + ' mode', 'success');
+  }
+
+  function updateThemeCards() {
+    const current = document.documentElement.getAttribute('data-theme');
+    document.getElementById('darkCard').classList.toggle('active',  current === 'dark');
+    document.getElementById('lightCard').classList.toggle('active', current === 'light');
+    document.getElementById('darkCheck').style.display  = current === 'dark'  ? '' : 'none';
+    document.getElementById('lightCheck').style.display = current === 'light' ? '' : 'none';
+  }
+
+  // ─── Accent Colors ────────────────────────────────────────────
+  const ACCENTS = [
+    { name: 'Indigo',  val: '#6366f1' },
+    { name: 'Violet',  val: '#8b5cf6' },
+    { name: 'Blue',    val: '#3b82f6' },
+    { name: 'Cyan',    val: '#06b6d4' },
+    { name: 'Green',   val: '#22c55e' },
+    { name: 'Amber',   val: '#f59e0b' },
+    { name: 'Rose',    val: '#f43f5e' },
+    { name: 'Pink',    val: '#ec4899' },
+  ];
+
+  function renderAccentColors() {
+    const s = getSettings();
+    const grid = document.getElementById('accentGrid');
+    grid.innerHTML = '';
+    ACCENTS.forEach(a => {
+      const div = document.createElement('div');
+      div.className = 'accent-swatch' + (s.accentColor === a.val || (!s.accentColor && a.val === '#6366f1') ? ' active' : '');
+      div.style.background = a.val;
+      div.title = a.name;
+      div.innerHTML = div.classList.contains('active') ? '<i class="fa-solid fa-check"></i>' : '';
+      div.onclick = () => {
+        document.querySelectorAll('.accent-swatch').forEach(el => { el.classList.remove('active'); el.innerHTML = ''; });
+        div.classList.add('active');
+        div.innerHTML = '<i class="fa-solid fa-check"></i>';
+        document.documentElement.style.setProperty('--accent', a.val);
+        saveSetting('accentColor', a.val);
+      };
+      grid.appendChild(div);
+    });
+  }
+
+  // ─── Categories ──────────────────────────────────────────────
+  function renderCategories() {
+    const cats = FinTran.getCategories();
+    ['income','expense'].forEach(type => {
+      const id = type === 'income' ? 'incomeCatList' : 'expenseCatList';
+      document.getElementById(id).innerHTML = cats.filter(c => c.type === type).map(c => `
+        <div class="cat-list-item">
+          <div class="cat-icon" style="background:${c.color}20;color:${c.color};">
+            <i class="fa-solid ${c.icon}"></i>
+          </div>
+          <div style="flex:1;">
+            <div style="font-size:13.5px;font-weight:600;color:var(--text-1);">${c.name}</div>
+          </div>
+          <span class="badge ${type === 'income' ? 'badge-income' : 'badge-expense'}">${type}</span>
+        </div>
+      `).join('');
+    });
+  }
+
+  // ─── Data Summary ──────────────────────────────────────────────
+  function renderDataSummary() {
+    const txns    = FinTran.getTransactions();
+    const budgets = FinTran.getBudgets();
+    const cats    = FinTran.getCategories();
+    document.getElementById('dataSummary').innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;text-align:center;">
+        <div style="padding:16px;background:var(--surface-2);border-radius:var(--radius-sm);">
+          <div style="font-size:22px;font-weight:800;color:var(--accent);">${txns.length}</div>
+          <div style="font-size:12px;color:var(--text-3);">Transactions</div>
+        </div>
+        <div style="padding:16px;background:var(--surface-2);border-radius:var(--radius-sm);">
+          <div style="font-size:22px;font-weight:800;color:var(--amber);">${budgets.length}</div>
+          <div style="font-size:12px;color:var(--text-3);">Budgets</div>
+        </div>
+        <div style="padding:16px;background:var(--surface-2);border-radius:var(--radius-sm);">
+          <div style="font-size:22px;font-weight:800;color:var(--green);">${cats.length}</div>
+          <div style="font-size:12px;color:var(--text-3);">Categories</div>
+        </div>
+      </div>
+      <div style="margin-top:14px;font-size:12px;color:var(--text-3);display:flex;align-items:center;gap:8px;">
+        <i class="fa-solid fa-shield-halved" style="color:var(--green);"></i>
+        All data stored locally on your device. Nothing is sent to any server.
+      </div>
+    `;
+  }
+
+  // ─── Export ──────────────────────────────────────────────────
+  function exportJSON() {
+    const data = {
+      exportedAt: new Date().toISOString(),
+      user: { name: user.name, email: user.email },
+      transactions: FinTran.getTransactions(),
+      budgets: FinTran.getBudgets(),
+    };
+    download('fintran_export.json', JSON.stringify(data, null, 2), 'application/json');
+    FinTran.toast('Data exported as JSON ✅', 'success');
+  }
+
+  function exportCSV() {
+    const txns = FinTran.getTransactions();
+    const rows = [['Date','Type','Category','Description','Amount']];
+    txns.forEach(t => {
+      const cat = FinTran.getCategoryById(t.categoryId);
+      rows.push([t.date, t.type, cat.name, t.description || '', t.amount]);
+    });
+    const csv = rows.map(r => r.join(',')).join('\n');
+    download('fintran_transactions.csv', csv, 'text/csv');
+    FinTran.toast('Transactions exported as CSV ✅', 'success');
+  }
+
+  function download(filename, content, type) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([content], { type }));
+    a.download = filename;
+    a.click();
+  }
+
+  // ─── Data management ─────────────────────────────────────────
+  function clearTxns() {
+    if (!confirm('Delete ALL transactions? This cannot be undone.')) return;
+    localStorage.removeItem('ft_transactions');
+    FinTran.toast('All transactions cleared', 'warning');
+    renderDataSummary();
+  }
+
+  function clearBudgets() {
+    if (!confirm('Reset ALL budgets?')) return;
+    localStorage.removeItem('ft_budgets');
+    FinTran.toast('All budgets reset', 'warning');
+    renderDataSummary();
+  }
+
+  function deleteAccount() {
+    if (!confirm('⚠️ This will permanently delete your account and ALL data. Are you sure?')) return;
+    if (!confirm('Last warning! This cannot be reversed.')) return;
+    ['ft_user','ft_users','ft_transactions','ft_budgets','ft_categories','ft_profile','ft_settings'].forEach(k => localStorage.removeItem(k));
+    window.location.href = 'login.html';
+  }
+</script>
+</body>
+</html>
