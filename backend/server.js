@@ -4,8 +4,10 @@ const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
-// AWS SDK v3 වල SES පාවිච්චි කරන නිවැරදි විදිහ
-const { SES } = require('@aws-sdk/client-sesv2');
+
+// මෙතන තමයි වෙනස: SESClient එක SES විදිහට පාවිච්චි කරන්න Alias එකක් දාන්න ඕනේ
+const { SESClient: SES } = require('@aws-sdk/client-sesv2');
+
 const db = require('./database');
 const { verifyToken } = require('./middleware/auth');
 
@@ -15,7 +17,7 @@ app.use(express.json());
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fintran_super_secret_key_12345';
 
-// SES Client එක සැකසීම
+// SES Client එක සැකසීම - දැන් මේ SES කියන එක Constructor එකක් විදිහට වැඩ කරනවා
 const ses = new SES({
   region: process.env.AWS_REGION || 'us-east-1',
   credentials: {
