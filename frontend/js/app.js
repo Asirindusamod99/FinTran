@@ -36,7 +36,7 @@ const FinTran = {
   },
 
   // ─── API HELPER ──────────────
-  apiUrl: '/api',
+  apiUrl: (window.location.hostname === '127.0.0.1' || window.location.port === '5500') ? 'http://localhost:3000/api' : '/api',
 
   async apiCall(endpoint, method = 'GET', body = null) {
     const user = this.getUser();

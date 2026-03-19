@@ -390,7 +390,7 @@
     btn.disabled = true;
 
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await fetch(FinTran.apiUrl + '/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
@@ -435,7 +435,7 @@
     
     try {
       // First try to login through API
-      const res = await fetch('/api/auth/login', {
+      const res = await fetch(FinTran.apiUrl + '/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: demoEmail, password: demoPassword })
