@@ -5,22 +5,40 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 
-// SESv2 Client එක සහ SendEmailCommand එක අරගමු
 const { SESv2Client, SendEmailCommand } = require('@aws-sdk/client-sesv2');
 
 const db = require('./database');
 const { verifyToken } = require('./middleware/auth');
 
 const app = express();
+
+// ─── FIX 1: CORS - Localhost + Production දෙකම Allow ───────────
+const allowedOrigins = [
+  'https://asirindusamod.online',
+  'http://localhost:8080',
+  'http://localhost:3000',
+  'http://127.0.0.1:5500',
+  'http://127.0.0.1:8080'
+];
 app.use(cors({
-    origin: 'https://asirindusamod.online', // ඔයාගේ Frontend URL එක (Gemini කිව්ව විදිහටම)
-    credentials: true
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, curl, Postman)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS Not Allowed: ' + origin));
+    }
+  },
+  credentials: true
 }));
 app.use(express.json());
 
-const JWT_SECRET = process.env.JWT_SECRET || 'fintran_super_secret_key_12345';
+// ─── FIX 2: Admin Credentials from .env ─────────────────────────
+const JWT_SECRET   = process.env.JWT_SECRET   || 'fintran_super_secret_key_12345';
+const ADMIN_EMAIL  = process.env.ADMIN_EMAIL  || 'admin@gmail.com';
+const ADMIN_PASS   = process.env.ADMIN_PASSWORD || 'admin123';
 
-// SES Client එක සැකසීම (Nodemailer 8 සඳහා නිවැරදි ක්‍රමය)
+// ─── SES / Nodemailer Setup ──────────────────────────────────────
 const sesClient = new SESv2Client({
   region: process.env.AWS_REGION || 'us-east-1',
   credentials: {
@@ -29,18 +47,17 @@ const sesClient = new SESv2Client({
   }
 });
 
-// Nodemailer Transport එක SESv3 සමඟ සම්බන්ධ කිරීම
 const transporter = nodemailer.createTransport({
   SES: { sesClient, SendEmailCommand }
 });
 
-// ─── AUTHENTICATION APIS ────────────────────────────────────────
+// ─── AUTH APIS ────────────────────────────────────────────────────
 
 app.post('/api/auth/register', async (req, res) => {
   const { id, name, email, password, avatar, currency, createdAt } = req.body;
   if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
 
-  const userId = id || 'usr_' + Date.now();
+  const userId  = id || 'usr_' + Date.now();
   const created = createdAt || new Date().toISOString();
 
   try {
@@ -59,10 +76,13 @@ app.post('/api/auth/register', async (req, res) => {
 
 app.post('/api/auth/login', async (req, res) => {
   const { email, password } = req.body;
-  if (email === 'admin@gmail.com' && password === 'admin123') {
+
+  // ─── FIX 2 Applied: Admin credentials from .env ───────────────
+  if (email === ADMIN_EMAIL && password === ADMIN_PASS) {
     const token = jwt.sign({ id: 'owner', email, role: 'owner' }, JWT_SECRET, { expiresIn: '1d' });
     return res.json({ token, user: { id: 'owner', name: 'Dashboard Owner', email, role: 'owner' } });
   }
+
   try {
     const [rows] = await db.execute(`SELECT * FROM users WHERE email = ?`, [email]);
     const user = rows[0];
@@ -87,18 +107,17 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = Date.now() + 10 * 60 * 1000;
     await db.execute(
-      `INSERT INTO password_resets (email, otp, expiresAt) VALUES (?, ?, ?) 
+      `INSERT INTO password_resets (email, otp, expiresAt) VALUES (?, ?, ?)
        ON DUPLICATE KEY UPDATE otp=VALUES(otp), expiresAt=VALUES(expiresAt)`,
       [email, otp, expiresAt]
     );
-    const mailOptions = {
+    transporter.sendMail({
       from: process.env.EMAIL_FROM || 'no-reply@fintran.lk',
       to: email,
       subject: 'FinTran Password Reset OTP',
-      html: `<div style="padding:40px;text-align:center;"><h2>Your OTP: ${otp}</h2></div>`
-    };
-    transporter.sendMail(mailOptions, (error, info) => {
-      console.log(`[Dev] Created OTP for ${email}: ${otp}`);
+      html: `<div style="padding:40px;text-align:center;"><h2>Your OTP: ${otp}</h2><p>Valid for 10 minutes.</p></div>`
+    }, () => {
+      console.log(`[Dev] OTP for ${email}: ${otp}`);
       res.json({ success: true, message: 'OTP sent.', devOtp: otp });
     });
   } catch (err) {
@@ -113,7 +132,7 @@ app.post('/api/auth/verify-otp', async (req, res) => {
     const record = rows[0];
     if (!record || record.otp !== String(otp).trim()) return res.status(400).json({ error: 'Invalid OTP' });
     if (Date.now() > record.expiresAt) return res.status(400).json({ error: 'OTP has expired' });
-    res.json({ success: true, message: 'OTP verified' });
+    res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -137,7 +156,7 @@ app.post('/api/auth/reset-password', async (req, res) => {
 
 app.get('/api/auth/me', verifyToken, async (req, res) => {
   if (req.user.role === 'owner') {
-    return res.json({ id: 'owner', name: 'Dashboard Owner', email: 'admin@gmail.com', role: 'owner' });
+    return res.json({ id: 'owner', name: 'Dashboard Owner', email: ADMIN_EMAIL, role: 'owner' });
   }
   try {
     const [rows] = await db.execute(`SELECT id, name, email, avatar, currency, createdAt, blocked FROM users WHERE id = ?`, [req.user.id]);
@@ -147,7 +166,7 @@ app.get('/api/auth/me', verifyToken, async (req, res) => {
   }
 });
 
-// ─── TRANSACTIONS APIS ────────────────────────────────────────
+// ─── TRANSACTIONS APIS ────────────────────────────────────────────
 
 app.get('/api/transactions', verifyToken, async (req, res) => {
   try {
@@ -155,7 +174,10 @@ app.get('/api/transactions', verifyToken, async (req, res) => {
       const [rows] = await db.execute(`SELECT * FROM transactions ORDER BY date DESC`);
       return res.json(rows);
     }
-    const [rows] = await db.execute(`SELECT * FROM transactions WHERE userId = ? ORDER BY date DESC, createdAt DESC`, [req.user.id]);
+    const [rows] = await db.execute(
+      `SELECT * FROM transactions WHERE userId = ? ORDER BY date DESC, createdAt DESC`,
+      [req.user.id]
+    );
     res.json(rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -177,6 +199,21 @@ app.post('/api/transactions', verifyToken, async (req, res) => {
   }
 });
 
+// ─── FIX 3: Missing PUT /api/transactions/:id ─────────────────────
+app.put('/api/transactions/:id', verifyToken, async (req, res) => {
+  const { type, amount, categoryId, description, date } = req.body;
+  try {
+    await db.execute(
+      `UPDATE transactions SET type=?, amount=?, categoryId=?, description=?, date=? WHERE id=? AND userId=?`,
+      [type, amount, categoryId, description || '', date, req.params.id, req.user.id]
+    );
+    const [rows] = await db.execute(`SELECT * FROM transactions WHERE id = ?`, [req.params.id]);
+    res.json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.delete('/api/transactions/:id', verifyToken, async (req, res) => {
   try {
     await db.execute(`DELETE FROM transactions WHERE id = ? AND userId = ?`, [req.params.id, req.user.id]);
@@ -186,9 +223,142 @@ app.delete('/api/transactions/:id', verifyToken, async (req, res) => {
   }
 });
 
-// ─── SERVER START ───────────────────────────────────────────
+// ─── FIX 3: Missing BUDGETS APIS ─────────────────────────────────
+
+app.get('/api/budgets', verifyToken, async (req, res) => {
+  try {
+    const [rows] = await db.execute(`SELECT * FROM budgets WHERE userId = ?`, [req.user.id]);
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/budgets', verifyToken, async (req, res) => {
+  const { categoryId, limit: budgetLimit, period } = req.body;
+  try {
+    await db.execute(
+      `INSERT INTO budgets (userId, categoryId, \`limit\`, period) VALUES (?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE \`limit\`=VALUES(\`limit\`), period=VALUES(period)`,
+      [req.user.id, categoryId, budgetLimit, period || 'monthly']
+    );
+    const [rows] = await db.execute(`SELECT * FROM budgets WHERE userId=? AND categoryId=?`, [req.user.id, categoryId]);
+    res.json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/budgets/:categoryId', verifyToken, async (req, res) => {
+  try {
+    await db.execute(`DELETE FROM budgets WHERE categoryId = ? AND userId = ?`, [req.params.categoryId, req.user.id]);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── FIX 3: Missing SAVINGS GOALS APIS ───────────────────────────
+
+app.get('/api/savings_goals', verifyToken, async (req, res) => {
+  try {
+    const [goals] = await db.execute(`SELECT * FROM savings_goals WHERE userId = ?`, [req.user.id]);
+    const [deposits] = await db.execute(`SELECT * FROM savings_deposits WHERE userId = ?`, [req.user.id]);
+    const goalsWithDeposits = goals.map(g => ({
+      ...g,
+      deposits: deposits.filter(d => d.goalId === g.id)
+    }));
+    res.json(goalsWithDeposits);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/savings_goals', verifyToken, async (req, res) => {
+  const { id, name, target, current, deadline, icon, color, createdAt } = req.body;
+  const goalId = id || 'goal_' + Date.now();
+  try {
+    await db.execute(
+      `INSERT INTO savings_goals (id, userId, name, target, current, deadline, icon, color, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [goalId, req.user.id, name, target, current || 0, deadline || null, icon || 'fa-piggy-bank', color || '#6366f1', createdAt || new Date().toISOString()]
+    );
+    const [rows] = await db.execute(`SELECT * FROM savings_goals WHERE id = ?`, [goalId]);
+    res.json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.put('/api/savings_goals/:id', verifyToken, async (req, res) => {
+  const { name, target, current, deadline, icon, color } = req.body;
+  try {
+    await db.execute(
+      `UPDATE savings_goals SET name=?, target=?, current=?, deadline=?, icon=?, color=? WHERE id=? AND userId=?`,
+      [name, target, current, deadline || null, icon, color, req.params.id, req.user.id]
+    );
+    const [rows] = await db.execute(`SELECT * FROM savings_goals WHERE id = ?`, [req.params.id]);
+    res.json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/savings_goals/:id', verifyToken, async (req, res) => {
+  try {
+    await db.execute(`DELETE FROM savings_goals WHERE id = ? AND userId = ?`, [req.params.id, req.user.id]);
+    await db.execute(`DELETE FROM savings_deposits WHERE goalId = ? AND userId = ?`, [req.params.id, req.user.id]);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/savings_goals/:goalId/deposit', verifyToken, async (req, res) => {
+  const { amount, note, date } = req.body;
+  const depositId = 'dep_' + Date.now();
+  const { goalId } = req.params;
+  try {
+    await db.execute(
+      `INSERT INTO savings_deposits (id, goalId, userId, amount, note, date) VALUES (?, ?, ?, ?, ?, ?)`,
+      [depositId, goalId, req.user.id, amount, note || '', date || new Date().toISOString()]
+    );
+    await db.execute(
+      `UPDATE savings_goals SET current = current + ? WHERE id = ? AND userId = ?`,
+      [amount, goalId, req.user.id]
+    );
+    const [rows] = await db.execute(`SELECT * FROM savings_goals WHERE id = ?`, [goalId]);
+    res.json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── ADMIN APIS ───────────────────────────────────────────────────
+
+app.get('/api/admin/users', verifyToken, async (req, res) => {
+  if (req.user.role !== 'owner') return res.status(403).json({ error: 'Forbidden' });
+  try {
+    const [users] = await db.execute(`SELECT id, name, email, avatar, currency, createdAt, blocked FROM users ORDER BY createdAt DESC`);
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.put('/api/admin/users/:id/block', verifyToken, async (req, res) => {
+  if (req.user.role !== 'owner') return res.status(403).json({ error: 'Forbidden' });
+  const { blocked } = req.body;
+  try {
+    await db.execute(`UPDATE users SET blocked = ? WHERE id = ?`, [blocked ? 1 : 0, req.params.id]);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── SERVER START ─────────────────────────────────────────────────
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT} with MySQL and SESv3! 🚀`);
+  console.log(`🚀 FinTran Server running on port ${PORT}`);
 });
