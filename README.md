@@ -1,106 +1,382 @@
 <div align="center">
-  <h1>💸 FinTran - Personal Finance Management System</h1>
 
-  <img alt="Node.js" src="https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white"/>
-  <img alt="AWS" src="https://img.shields.io/badge/AWS-%23FF9900.svg?style=for-the-badge&logo=amazon-aws&logoColor=white"/>
-  <img alt="MySQL" src="https://img.shields.io/badge/mysql-4479A1.svg?style=for-the-badge&logo=mysql&logoColor=white"/>
-  <img alt="Docker" src="https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white"/>
+# 💸 FinTran
+
+### Personal Finance Management System
+
+[![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org)
+[![Express.js](https://img.shields.io/badge/Express.js-4.x-000000?style=for-the-badge&logo=express&logoColor=white)](https://expressjs.com)
+[![SQLite](https://img.shields.io/badge/SQLite-3-003B57?style=for-the-badge&logo=sqlite&logoColor=white)](https://sqlite.org)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://docker.com)
+[![JWT](https://img.shields.io/badge/JWT-Auth-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white)](https://jwt.io)
+[![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
+
+**FinTran** is a fast, secure, and beautifully designed Full-Stack Web Application for managing your personal finances — track expenses, set budgets, achieve savings goals, and more.
+
+[🚀 Getting Started](#-getting-started) · [✨ Features](#-features) · [🛠️ Tech Stack](#%EF%B8%8F-tech-stack) · [🐳 Docker Deployment](#-docker-deployment) · [📡 API Reference](#-api-reference)
+
+---
+
 </div>
 
-FinTran is a multi-tier Personal Finance Management application built with a Vanilla JavaScript frontend and a robust Node.js/Express backend. Deployed on **AWS Cloud** using a decoupled service architecture, it offers users secure tracking of incomes, expenses, budgets, and savings goals.
+## 📖 Project Overview
 
----
+FinTran is built with a **"Local-First API Sync"** architecture — UI updates happen instantly via browser `localStorage`, while data is simultaneously synced to the backend SQLite database in the background. This means a blazing-fast user experience with full data persistence.
 
-## ✨ Key Features
-
-- **Full Financial Dashboard:** Real-time visibility into income, expenses, and savings goals.
-- **User Authentication:** Highly secure login and registration utilizing **JWT** and **Bcrypt**.
-- **Secure Password Reset:** Automated OTP emails via **AWS SES (Simple Email Service)**.
-- **Admin Dashboard:** Exclusive administrative portal allowing system overview and account user management.
-- **Decoupled Cloud Architecture:** Separately hosted Frontend & Backend inside **Docker** containers, with datastore shifted from SQLite to **Amazon RDS (MySQL)**.
-- **Robust Routing:** Managed API networking and reverse proxy paths using **Nginx**.
-- **CI/CD Pipeline:** Fully automated deployments to an **Amazon EC2** Linux instance via **GitHub Actions**.
-
----
-
-## 🛠 Tech Stack
-
-**Frontend:** HTML5, CSS3, Vanilla JavaScript  
-**Backend:** Node.js, Express.js  
-**Database:** AWS RDS (MySQL 8)  
-**Cloud & DevOps:**
-- Amazon EC2 (Hosting Compute Layer)
-- AWS VPC & Security Groups (Network Isolation)
-- AWS SES (Mailing API)
-- ALB / CloudWatch (Availability & Monitoring)
-- Docker & Docker Compose (Containerization)
-- GitHub Actions (CI/CD Automations)
-
----
-
-## 🏗 System Architecture
-
-```mermaid
-graph TD;
-    User([End User / Browser]) -->|HTTPS Request| ALB[AWS ALB]
-    ALB --> Nginx(Nginx Reverse Proxy Container)
-    
-    subgraph Amazon EC2 Instance
-      Nginx -->|/ (Static Files)| Frontend(Frontend Container)
-      Nginx -->|/api/* (Proxy Pass)| Backend(Node.js Backend API Container)
-    end
-    
-    Backend -->|MySQL Connection| RDS[(Amazon RDS MySQL)]
-    Backend -->|SMTP / API| SES(AWS Simple Email Service)
+```
+User Action → LocalStorage Update (instant UI) → Background API Sync → SQLite Database
 ```
 
 ---
 
-## 🚀 Getting Started (Local Development)
+## ✨ Features
 
-### 1. Prerequisites
-- [Docker](https://www.docker.com/products/docker-desktop/) and Docker Compose installed.
-- MySQL Database accessibility.
-- AWS Account with SES configured (Optional, strictly for email flows).
+### 🔐 Authentication System
+- User registration with **password strength indicator**
+- Secure login with **JWT token-based** session management
+- **Forgot Password** flow via 6-digit OTP sent to real Gmail inbox
+- OTP verification and secure password reset
 
-### 2. Clone the Repository
+### 📊 Dashboard (`index.html`)
+- Total income, expenses, and **net balance** at a glance
+- **6-month income vs expense chart** using Chart.js
+- Recent transactions overview
+
+### 💳 Transactions (`transactions.html`)
+- Full **CRUD operations** for income and expense entries
+- Categorized transactions with date and notes
+- Filter and search through transaction history
+
+### 📁 Budgets (`budget.html`)
+- Set monthly spending limits per category (Food, Transport, etc.)
+- Visual **progress bars** showing budget utilization
+- Instant alerts when approaching budget limits
+
+### 🎯 Savings Goals (`savings.html`)
+- Create savings goals (e.g., New Phone, Vacation, Car)
+- Make deposits toward each goal
+- Track progress with visual indicators
+
+### 🛡️ Admin Dashboard (`admin.html`)
+- **Owner-only** access via special credentials
+- View all registered users (name, email, status)
+- **Block / Unblock** user accounts instantly
+
+---
+
+## 🛠️ Tech Stack
+
+### Frontend
+| Technology | Purpose |
+|---|---|
+| HTML5 & CSS3 | UI structure with Glassmorphism, Dark/Light theme, Animations |
+| Vanilla JavaScript (ES6+) | API calls, LocalStorage handling, DOM manipulation |
+| Chart.js | Income/expense bar and line charts |
+| FontAwesome | UI icons |
+
+### Backend
+| Technology | Purpose |
+|---|---|
+| Node.js + Express.js | REST API server and routing |
+| SQLite3 | File-based persistent database (no separate server needed) |
+| JWT | Secure user authentication and session tokens |
+| Bcrypt.js | Password hashing before database storage |
+| Nodemailer | Sending OTP emails via Gmail for password reset |
+| CORS + Dotenv | Cross-origin security and environment variable management |
+
+---
+
+## 📁 Project Structure
+
+```
+fintran/
+├── backend/
+│   ├── server.js              # Express.js entry point
+│   ├── routes/
+│   │   ├── auth.js            # Authentication routes
+│   │   ├── transactions.js    # Transaction CRUD routes
+│   │   ├── budgets.js         # Budget routes
+│   │   ├── savings.js         # Savings goals routes
+│   │   └── admin.js           # Admin panel routes
+│   ├── middleware/
+│   │   └── verifyToken.js     # JWT authentication middleware
+│   ├── db/
+│   │   └── database.js        # SQLite3 connection & schema init
+│   ├── finTran.db             # SQLite database file (auto-created)
+│   ├── package.json
+│   ├── .env                   # Environment variables (not committed)
+│   └── Dockerfile
+├── frontend/
+│   ├── index.html             # Dashboard
+│   ├── transactions.html      # Transactions management
+│   ├── budget.html            # Budget tracking
+│   ├── savings.html           # Savings goals
+│   ├── admin.html             # Admin panel
+│   ├── login.html             # Login page
+│   ├── register.html          # Registration page
+│   ├── css/
+│   │   └── styles.css         # Global styles
+│   ├── js/
+│   │   └── app.js             # Frontend JS logic
+│   ├── nginx.conf             # Nginx routing config
+│   └── Dockerfile
+└── docker-compose.yml         # Multi-container orchestration
+```
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- [Node.js](https://nodejs.org) v18 or higher
+- [npm](https://npmjs.com) v9 or higher
+- [Git](https://git-scm.com)
+
+### 1. Clone the Repository
+
 ```bash
-git clone https://github.com/Asirindusamod99/FinTran.git
-cd FinTran
+git clone https://github.com/your-username/fintran.git
+cd fintran
 ```
 
-### 3. Environment Variables
-Create a `.env` file inside the `backend/` directory based on what is active:
+### 2. Configure Environment Variables
+
+```bash
+cp backend/.env.example backend/.env
+```
+
+Edit `backend/.env` with your values:
+
 ```env
-# Server Configuration
-PORT=3000
+PORT=5000
+JWT_SECRET=your_super_secret_jwt_key_here
+JWT_EXPIRES_IN=7d
 
-# Database (AWS RDS or Local Machine)
-DB_HOST=your-rds-endpoint.amazonaws.com
-DB_USER=admin
-DB_PASS=password123
-DB_NAME=fintran_db
+EMAIL_USER=yourapp@gmail.com
+EMAIL_PASS=your_gmail_app_password
 
-# Security
-JWT_SECRET=your_super_secret_jwt_key
+ADMIN_EMAIL=admin@fintran.lk
+ADMIN_PASSWORD=Admin@Secure123
 
-# AWS SES credentials (If forgot password flow needed)
-AWS_REGION=us-east-1
-AWS_ACCESS_KEY_ID=your_access_key
-AWS_SECRET_ACCESS_KEY=your_secret_key
-SENDER_EMAIL=noreply@fintran.lk
+DB_PATH=./finTran.db
 ```
 
-### 4. Run the Application
-The standard way to build both the frontend asset reverse-proxy and the backend API is with Docker Compose:
+> ⚠️ **Gmail Setup:** Enable 2-Factor Authentication on your Gmail account, then generate an **App Password** from Google Account Settings and use it as `EMAIL_PASS`.
+
+### 3. Install Dependencies & Run
+
 ```bash
-docker compose up --build -d
+# Install backend dependencies
+cd backend
+npm install
+
+# Start the backend server
+npm start
 ```
-- **Application Live GUI:** [http://localhost:8080](http://localhost:8080)
-- **Backend API Layer:** [http://localhost:3000](http://localhost:3000)
+
+Open `frontend/index.html` in your browser or serve it with a local server:
+
+```bash
+# Using npx serve (optional)
+cd frontend
+npx serve .
+```
+
+The app will be available at:
+- **Frontend:** `http://localhost:3000` (or open `index.html` directly)
+- **Backend API:** `http://localhost:5000`
 
 ---
 
-## 👨‍💻 Author
-**Asirindu Samod** - *Cloud & DevOps Enthusiast, Full-Stack Developer*  
-[GitHub](https://github.com/Asirindusamod99)
+## 🐳 Docker Deployment
+
+The easiest way to run FinTran in any environment.
+
+### Quick Start
+
+```bash
+# Clone and configure
+git clone https://github.com/your-username/fintran.git
+cd fintran
+
+# Set up environment
+cp backend/.env.example backend/.env
+# Edit backend/.env with your credentials
+
+# Build and launch all containers
+docker-compose up --build -d
+```
+
+### Access the Application
+
+| Service | URL |
+|---|---|
+| Frontend | http://localhost |
+| Backend API | http://localhost:5000 |
+| API Health Check | http://localhost:5000/health |
+| Admin Panel | http://localhost/admin.html |
+
+### Useful Docker Commands
+
+```bash
+# View running containers
+docker-compose ps
+
+# Stream backend logs
+docker-compose logs -f backend
+
+# Stop all containers
+docker-compose down
+
+# Rebuild after code changes
+docker-compose up --build -d
+
+# Restart services
+docker-compose restart
+```
+
+### docker-compose.yml Overview
+
+```yaml
+version: "3.8"
+
+services:
+  backend:
+    build: ./backend
+    container_name: fintran-backend
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./backend/.env
+    volumes:
+      - ./backend/finTran.db:/app/finTran.db  # Persist database
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    container_name: fintran-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+```
+
+---
+
+## 📡 API Reference
+
+All protected endpoints require the header:
+```
+Authorization: Bearer <JWT_TOKEN>
+```
+
+### Authentication
+
+| Method | Endpoint | Description | Auth |
+|---|---|---|---|
+| `POST` | `/api/auth/register` | Create a new user account | Public |
+| `POST` | `/api/auth/login` | Login and receive JWT token | Public |
+| `POST` | `/api/auth/forgot-password` | Send OTP to email | Public |
+| `POST` | `/api/auth/verify-otp` | Verify the OTP code | Public |
+| `POST` | `/api/auth/reset-password` | Set a new password | Public |
+
+### Transactions
+
+| Method | Endpoint | Description | Auth |
+|---|---|---|---|
+| `GET` | `/api/transactions` | Get all user transactions | 🔒 |
+| `POST` | `/api/transactions` | Add a new transaction | 🔒 |
+| `PUT` | `/api/transactions/:id` | Update a transaction | 🔒 |
+| `DELETE` | `/api/transactions/:id` | Delete a transaction | 🔒 |
+| `GET` | `/api/transactions/summary` | Get 6-month summary for charts | 🔒 |
+
+### Budgets
+
+| Method | Endpoint | Description | Auth |
+|---|---|---|---|
+| `GET` | `/api/budgets` | Get all budgets | 🔒 |
+| `POST` | `/api/budgets` | Create a new budget | 🔒 |
+| `PUT` | `/api/budgets/:id` | Update budget amount | 🔒 |
+| `DELETE` | `/api/budgets/:id` | Delete a budget | 🔒 |
+
+### Savings Goals
+
+| Method | Endpoint | Description | Auth |
+|---|---|---|---|
+| `GET` | `/api/savings` | Get all savings goals | 🔒 |
+| `POST` | `/api/savings` | Create a new savings goal | 🔒 |
+| `POST` | `/api/savings/:id/deposit` | Deposit amount to a goal | 🔒 |
+| `DELETE` | `/api/savings/:id` | Delete a savings goal | 🔒 |
+
+### Admin *(Owner only)*
+
+| Method | Endpoint | Description | Auth |
+|---|---|---|---|
+| `GET` | `/api/admin/users` | List all registered users | 🔒 Owner |
+| `PATCH` | `/api/admin/users/:id/block` | Block or unblock a user | 🔒 Owner |
+| `DELETE` | `/api/admin/users/:id` | Delete a user account | 🔒 Owner |
+
+---
+
+## 🗄️ Database Schema
+
+FinTran uses **SQLite3** with 6 tables:
+
+```
+users              → id, name, email, password, role, blocked
+transactions       → id, userId, type, amount, category, date, note
+budgets            → id, userId, category, amount, month, year
+savings_goals      → id, userId, title, target, saved
+savings_deposits   → id, goalId, amount, date
+password_resets    → id, email, otp, expiresAt
+```
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Here's how to get started:
+
+1. **Fork** the repository
+2. **Create** a feature branch
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+3. **Commit** your changes
+   ```bash
+   git commit -m "feat: add your feature description"
+   ```
+4. **Push** to your branch
+   ```bash
+   git push origin feature/your-feature-name
+   ```
+5. **Open** a Pull Request
+
+### Commit Convention
+
+| Prefix | Use for |
+|---|---|
+| `feat:` | New features |
+| `fix:` | Bug fixes |
+| `docs:` | Documentation updates |
+| `style:` | Code formatting |
+| `refactor:` | Code restructuring |
+| `chore:` | Build / config changes |
+
+---
+
+## 📄 License
+
+This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+
+---
+
+<div align="center">
+
+Made with ❤️ by the FinTran Team
+
+⭐ Star this repo if you found it helpful!
+
+</div>
